@@ -796,7 +796,7 @@ There are several applications defined that will be spun as services in ECS as i
        - albType: Choose between `external` or `internal` depending on whether or not services must be accessible from outside the VPC. Default is `external`
     - environmentVars{} : Set of environment vars to export to container. They must be string.
     - command: Container starting command if any (for example ['npm', 'start']).
-    - repository: Required. Name of repository (for example '950711068211.dkr.ecr.eu-west-1.amazonaws.com').
+    - repository: Required. Name of repository (for example '930411028516.dkr.ecr.eu-west-1.amazonaws.com').
     - imageName: Required. Name of image in repository (for example 'nightfall-proposer').
     - imageTag: Required. Name of image tag (for example 'latest')
  - cpu: Required. Number of vCPUs reserved for the task. See [here](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html) for
