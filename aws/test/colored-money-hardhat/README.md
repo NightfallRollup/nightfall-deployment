@@ -98,7 +98,7 @@ npx hardhat balance --token ETH --account 0x9C8B2276D490141Ae1440Da660E470E7C034
 ```
 - Transfer native token to accounts separated by ','
 ```
-npx hardhat transfer --accounts <account> --amount <amount> --network staging_edge      
+npx hardhat transfer --account <account> --amount <amount> --network staging_edge      
 ```
 Example:
 ```
