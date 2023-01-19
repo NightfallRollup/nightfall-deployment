@@ -96,13 +96,13 @@ Example:
 ```
 npx hardhat balance --token ETH --account 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --network staging_edge
 ```
-- Transfer native token to an account
+- Transfer native token to accounts separated by ','
 ```
-npx hardhat transfer --account <account> --amount <amount> --network staging_edge      
+npx hardhat transfer --accounts <account> --amount <amount> --network staging_edge      
 ```
 Example:
 ```
-npx hardhat transfer --account 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --amount 1000 --network staging_edge      
+npx hardhat transfer --accounts 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --amount 1000 --network staging_edge      
 ```
 ## Run tests
 For running the tests you need to specify in the .env the following variables
