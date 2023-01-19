@@ -11,12 +11,15 @@ aws/services/dashboard/options.js
 *_diff.txt
 aws/test/data/*
 .~lock.*
-aws/aws/contexts/cdk.context.tmp-*.json
 aws/certificates/*.ovpn
 aws/aws/keys/*
 aws/scripts/output.txt
 aws/aws/paramstore/params.txt
 aws/env/*
+aws/aws/contexts/*
+
+# Allow context files
+!aws/context/cdk.context.template.json
 
 # Allow env files
 !aws/env/aws.copy.env
