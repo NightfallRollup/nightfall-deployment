@@ -259,9 +259,10 @@ export async function addFunds(RLN: RLN, hre: HardhatRuntimeEnvironment, entityI
     await tx?.wait(); // we have to wait for tx to be mined to avoid nonce problems
     customerExists = true;
   } catch (error) {
-    console.log("ERROR", error)
     if (error.message.includes('Already a customer')) {
       customerExists = true;
+    } else {
+      console.log("ERROR", error)
     }
   }
 
