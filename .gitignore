@@ -12,9 +12,15 @@ aws/services/dashboard/options.js
 aws/test/data/*
 .~lock.*
 aws/aws/contexts/cdk.context.tmp-*.json
-aws/env/tmp-*.env
 aws/certificates/*.ovpn
 aws/aws/keys/*
 aws/scripts/output.txt
-aws/env/aws.env
 aws/aws/paramstore/params.txt
+aws/env/*
+
+# Allow env files
+!aws/env/aws.copy.env
+!aws/env/init-env.env
+!aws/env/secrets.env
+!aws/env/secrets-ganache.env
+!aws/env/template.env
