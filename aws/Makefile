@@ -85,6 +85,9 @@ ifeq ($(FORCE_ENV_BYPASS),)
   endif
 endif
 
+# Build context file if it doesnt exist
+CONTEXT:=$(shell if [ ! -f "./aws/contexts/cdk.context.${RELEASE}.json" ]; then cd scripts && ENV_NAME=${RELEASE} REGION=${REGION} ./create-cdk-context.sh; fi)
+
 # Deploy Infrastructure (Cloudformation stacks)
 deploy-infra:
 	@make cdk-context
