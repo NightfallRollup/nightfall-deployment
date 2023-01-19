@@ -105,6 +105,7 @@ destroy-infra:
 	   make stop-db; \
     fi
 	cd scripts && RELEASE=${RELEASE} ./delete-dynamodb.sh
+	cd scripts && RELEASE=${RELEASE} ./delete-volumes.sh
 
 # Delete MongoDb
 delete-db:
