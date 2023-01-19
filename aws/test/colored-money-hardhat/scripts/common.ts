@@ -258,6 +258,7 @@ export async function addFunds(RLN: RLN, hre: HardhatRuntimeEnvironment, entityI
     tx = await RLN.acceptCustomer(recipient);
     await tx?.wait(); // we have to wait for tx to be mined to avoid nonce problems
     customerExists = true;
+    console.log("Accept customer ok")
   } catch (error) {
     if (error.message.includes('Already a customer')) {
       customerExists = true;
@@ -266,7 +267,6 @@ export async function addFunds(RLN: RLN, hre: HardhatRuntimeEnvironment, entityI
     }
   }
 
-  console.log("Accept customer ok")
   if (customerExists) {
     tx = await RLN.mint(entityId, amount);
     await tx?.wait();  
