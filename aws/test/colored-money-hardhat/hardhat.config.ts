@@ -31,10 +31,10 @@ task('balance', `Prints an account's RLN token balance`)
 task('transfer', `Transfer native token to the account`)
   .addOptionalParam('token', 'Token address', '')
   .addOptionalParam('tokenid', 'Token id', '')
-  .addParam('accounts', `Account's addresses to transfer separated by ','`)
+  .addParam('account', `Account's addresses to transfer separated by ','`)
   .addParam('amount', `Amount of native token to be transferred`)
   .setAction(async (taskArgs, hre) => {
-    await transfer(hre, taskArgs.accounts, taskArgs.amount, taskArgs.token, taskArgs.tokenid);
+    await transfer(hre, taskArgs.account, taskArgs.amount, taskArgs.token, taskArgs.tokenid);
   });
 
 task('mint', `Mint RLN tokens for the bank`)
