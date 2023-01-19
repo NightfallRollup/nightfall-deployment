@@ -104,6 +104,15 @@ Example:
 ```
 npx hardhat transfer --account 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --amount 1000 --network staging_edge      
 ```
+- Transfer ERC20 token to accounts separated by ','
+```
+npx hardhat transfer --account <account> --amount <amount> --token <token address> --network staging_edge      
+```
+Example:
+```
+npx hardhat transfer --account 0x9efc63e6914a7883ccd302c37bc690fff00b1eb7,0x2b2b71c145b3bd22fca39312181f2bce8087a90e --amount 1000 --token 0xe721F2D97c58b1D1ccd0C80B88256a152d27f0Fe --network staging_edge      
+```
+
 ## Run tests
 For running the tests you need to specify in the .env the following variables
 ```
