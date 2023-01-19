@@ -67,7 +67,7 @@ export DEPLOYER_ETH_NETWORK=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^expo
 export ACCOUNT_ID=$(shell cat env/aws.env | sed  -n -e 's/^export ACCOUNT_ID=//p')
 
 # RETRIEVE REGION from AWS config
-export REGION_AWS=$(shell cat ~/.aws/config | sed  -n -e 's/^region = //p')
+export REGION_AWS=$(shell aws configure get region)
 ifneq ($(REGION),$(REGION_AWS))
   $(error Undefined REGION)
 endif
