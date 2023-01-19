@@ -1,0 +1,58 @@
+{
+    "vpc-provider:account=ACCOUNT_ID:filter.vpc-id=VPC_ID:region=REGION:returnAsymmetricSubnets=true": {
+      "vpcId": "VPC_ID",
+      "vpcCidrBlock": "10.48.0.0/16",
+      "availabilityZones": [],
+      "subnetGroups": [
+        {
+          "name": "Private",
+          "type": "Private",
+          "subnets": [
+            {
+              "subnetId": "BACK1_SUBNET_ID",
+              "cidr": "10.48.21.0/24",
+              "availabilityZone": "REGIONa",
+              "routeTableId": "ROUTE_TABLE1_PRIVATE_ID"
+            },
+            {
+              "subnetId": "BACK2_SUBNET_ID",
+              "cidr": "10.48.22.0/24",
+              "availabilityZone": "REGIONb",
+              "routeTableId": "ROUTE_TABLE2_PRIVATE_ID"
+            },
+            {
+              "subnetId": "BACK3_SUBNET_ID",
+              "cidr": "10.48.23.0/24",
+              "availabilityZone": "REGIONc",
+              "routeTableId": "ROUTE_TABLE3_PRIVATE_ID"
+            }
+          ]
+        },
+        {
+          "name": "Public",
+          "type": "Public",
+          "subnets": [
+            {
+              "subnetId": "PUBLIC1_SUBNET_ID",
+              "cidr": "10.48.1.0/24",
+              "availabilityZone": "REGIONa",
+              "routeTableId": "ROUTE_TABLE_PUBLIC_ID"
+            },
+            {
+              "subnetId": "PUBLIC2_SUBNET_ID",
+              "cidr": "10.48.2.0/24",
+              "availabilityZone": "REGIONb",
+              "routeTableId": "ROUTE_TABLE_PUBLIC_ID"
+            },
+            {
+              "subnetId": "PUBLIC3_SUBNET_ID",
+              "cidr": "10.48.3.0/24",
+              "availabilityZone": "REGIONc",
+              "routeTableId": "ROUTE_TABLE_PUBLIC_ID"
+            }
+          ]
+        }
+      ]
+    }
+  }
+  

@@ -1,0 +1,65 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+#!/bin/bash
+sudo su
+cd /home/ubuntu
+
+apt update -y
+nodeInstalled=$(which node)
+if [ -z ${nodeInstalled} ]; then
+  curl -sL https://deb.nodesource.com/setup_16.x | bash -
+  apt-get install -y nodejs 
+fi
+
+dockeInstalled=$(which docker)
+if [ -z ${dockerInstalled} ]; then
+  apt-get install \
+      ca-certificates \
+      curl \
+      gnupg \
+      lsb-release
+
+ mkdir -p /etc/apt/keyrings
+ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+  echo \
+    "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+    $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+  apt-get update
+  apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  VERSION_STRING=5:20.10.18~3-0~ubuntu-focal
+  apt-get install docker-ce=${VERSION_STRING} docker-ce-cli=${VERSION_STRING} containerd.io docker-compose-plugin
+  service docker start
+
+  groupadd docker
+  usermod -aG docker ubuntu
+fi
+
+dockerComposeInstalled=$(which docker-compose)
+if [ -z ${dockerComposeInstalled} ]; then
+  curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  chmod +x /usr/local/bin/docker-compose
+fi
+
+tmux kill-session -t geth
+tmux new -d -s geth
+
+tmux send-keys "docker run -it -p 8546:8546 public.ecr.aws/m0t3e1j9/geth" Enter

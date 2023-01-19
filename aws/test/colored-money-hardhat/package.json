@@ -1,0 +1,20 @@
+{
+  "name": "colored-money",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "LOG_LEVEL=error npx hardhat test test/**.test.ts",
+    "edge:deploy": "npx hardhat run scripts/deploy_contract.ts --network staging_edge"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^2.0.1",
+    "@openzeppelin/contracts": "^4.8.0",
+    "dotenv": "^16.0.1",
+    "hardhat": "^2.12.6",
+    "nightfall-sdk": "^1.1.2"
+  }
+}

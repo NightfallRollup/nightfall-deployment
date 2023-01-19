@@ -1,0 +1,1 @@
+# Example dockerfile. CDK will build this docker and put the image in a ECR repo

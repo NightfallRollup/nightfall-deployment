@@ -1,0 +1,124 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+#!/bin/bash
+
+mkdir -p /home/ubuntu/edge
+cd /home/ubuntu/edge
+if [ ! -f polygon-edge_0.6.0_linux_amd64.tar.gz ]; then
+  wget https://github.com/0xPolygon/polygon-edge/releases/download/v0.6.0/polygon-edge_0.6.0_linux_amd64.tar.gz
+  tar -xvzf polygon-edge_0.6.0_linux_amd64.tar.gz
+fi
+rm -rf test-chain-*
+tmux kill-session -t edge
+
+VALIDATOR1=$(./polygon-edge secrets init --data-dir test-chain-1)
+VALIDATOR1_ADDRESS=$(echo ${VALIDATOR1} | awk '{split($0,a," "); print a[7]}')
+VALIDATOR1_BLS_PUBLIC_KEY=$(echo ${VALIDATOR1} | awk '{split($0,a," "); print a[12]}')
+VALIDATOR1_NODE_ID=$(echo ${VALIDATOR1} | awk '{split($0,a," "); print a[16]}')
+
+VALIDATOR2=$(./polygon-edge secrets init --data-dir test-chain-2)
+VALIDATOR2_ADDRESS=$(echo ${VALIDATOR2} | awk '{split($0,a," "); print a[7]}')
+VALIDATOR2_BLS_PUBLIC_KEY=$(echo ${VALIDATOR2} | awk '{split($0,a," "); print a[12]}')
+VALIDATOR2_NODE_ID=$(echo ${VALIDATOR2} | awk '{split($0,a," "); print a[16]}')
+
+VALIDATOR3=$(./polygon-edge secrets init --data-dir test-chain-3)
+VALIDATOR3_ADDRESS=$(echo ${VALIDATOR3} | awk '{split($0,a," "); print a[7]}')
+VALIDATOR3_BLS_PUBLIC_KEY=$(echo ${VALIDATOR3} | awk '{split($0,a," "); print a[12]}')
+VALIDATOR3_NODE_ID=$(echo ${VALIDATOR3} | awk '{split($0,a," "); print a[16]}')
+
+VALIDATOR4=$(./polygon-edge secrets init --data-dir test-chain-4)
+VALIDATOR4_ADDRESS=$(echo ${VALIDATOR4} | awk '{split($0,a," "); print a[7]}')
+VALIDATOR4_BLS_PUBLIC_KEY=$(echo ${VALIDATOR4} | awk '{split($0,a," "); print a[12]}')
+VALIDATOR4_NODE_ID=$(echo ${VALIDATOR4} | awk '{split($0,a," "); print a[16]}')
+
+# Increase number of max open files
+ulimit -n 524288
+
+GPRC_PORT1=10000
+LIBP2P_PORT1=$(($GPRC_PORT1+1))
+RPC_PORT1=$(($LIBP2P_PORT1+1))
+
+GPRC_PORT2=2000
+LIBP2P_PORT2=$(($GPRC_PORT2+1))
+RPC_PORT2=$(($LIBP2P_PORT2+1))
+
+GPRC_PORT3=30000
+LIBP2P_PORT3=$(($GPRC_PORT3+1))
+RPC_PORT3=$(($LIBP2P_PORT3+1))
+
+GPRC_PORT4=40000
+LIBP2P_PORT4=$(($GPRC_PORT4+1))
+RPC_PORT4=$(($LIBP2P_PORT4+1))
+
+DNS=127.0.0.1
+BOOTNODE1_CONNECTION_STRING="/ip4/${DNS}/tcp/${LIBP2P_PORT1}/p2p/${VALIDATOR1_NODE_ID}"
+BOOTNODE2_CONNECTION_STRING="/ip4/${DNS}/tcp/${LIBP2P_PORT2}/p2p/${VALIDATOR2_NODE_ID}"
+
+ADDR1=0x9C8B2276D490141Ae1440Da660E470E7C0349C63  # deployer
+ADDR2=0xfeEDA3882Dd44aeb394caEEf941386E7ed88e0E0  # boot proposer
+ADDR3=0xfCb059A4dB5B961d3e48706fAC91a55Bad0035C9  # boot challenger
+ADDR4=0x4789FD18D5d71982045d85d5218493fD69F55AC4  # liquidity provider
+ADDR5=0x316f2ee26956d28557ecbc28dce649eed39623b1  # user 1
+ADDR6=0xcb4694ce55b666675a50bdcd7eced9a1b6776b08  # user 2
+ADDR7=0x30bb77e9c33d2123d4ec697b4d17747363a0d4ca  # user 3
+ADDR8=0x7baed1be2a5148189b32df8e28eb7d0f7601a604  # user 4
+ADDR9=0xf67e2c660bd5a1ea22b2f497904291eae18b5eae  # user 5
+ADDR10=0x7248c89d5d8a247320c9b1291d3b091fe02327a7 # user 6
+ADDR11=0x014ba261ecef0b19e99f169718992be67aeadbd7 # user 7
+ADDR12=0x8de3597f0d19f478e2a2f9ef8344c5ace86dfe21 # user 8
+ADDR13=0x4c197193f31ebe2b668a0f5f6932adcfbd55bbfc # user 9
+
+rm ./genesis.json
+
+BLOCK_GAS_LIMIT=30000000
+PREMINE_AMOUNT=1000000000000000000000000
+
+./polygon-edge genesis --block-gas-limit ${BLOCK_GAS_LIMIT} \
+  --consensus ibft \
+  --ibft-validators-prefix-path test-chain- \
+  --bootnode ${BOOTNODE1_CONNECTION_STRING} \
+  --bootnode ${BOOTNODE2_CONNECTION_STRING} \
+  --premine=${ADDR1}:${PREMINE_AMOUNT} \
+  --premine=${ADDR2}:${PREMINE_AMOUNT} \
+  --premine=${ADDR3}:${PREMINE_AMOUNT} \
+  --premine=${ADDR4}:${PREMINE_AMOUNT} \
+  --premine=${ADDR5}:${PREMINE_AMOUNT} \
+  --premine=${ADDR6}:${PREMINE_AMOUNT} \
+  --premine=${ADDR7}:${PREMINE_AMOUNT} \
+  --premine=${ADDR8}:${PREMINE_AMOUNT} \
+  --premine=${ADDR9}:${PREMINE_AMOUNT} \
+  --premine=${ADDR10}:${PREMINE_AMOUNT} \
+  --premine=${ADDR11}:${PREMINE_AMOUNT} \
+  --premine=${ADDR12}:${PREMINE_AMOUNT} \
+  --premine=${ADDR13}:${PREMINE_AMOUNT} \
+
+
+tmux new -d -s edge
+tmux split-window -h
+tmux select-pane -t 0
+tmux split-window -h
+tmux select-pane -t 2
+tmux split-window -h
+
+tmux send-keys -t 0 "./polygon-edge server --price-limit 0 --json-rpc-block-range-limit 0 --json-rpc-batch-request-limit 0  --data-dir ./test-chain-1 --chain genesis.json --grpc-address :${GPRC_PORT1} --libp2p :${LIBP2P_PORT1} --jsonrpc :${RPC_PORT1} --seal" Enter
+tmux send-keys -t 1 "./polygon-edge server --price-limit 0 --json-rpc-block-range-limit 0 --json-rpc-batch-request-limit 0  --data-dir ./test-chain-2 --chain genesis.json --grpc-address :${GPRC_PORT2} --libp2p :${LIBP2P_PORT2} --jsonrpc :${RPC_PORT2} --seal" Enter
+tmux send-keys -t 2 "./polygon-edge server --price-limit 0 --json-rpc-block-range-limit 0 --json-rpc-batch-request-limit 0  --data-dir ./test-chain-3 --chain genesis.json --grpc-address :${GPRC_PORT3} --libp2p :${LIBP2P_PORT3} --jsonrpc :${RPC_PORT3} --seal" Enter
+tmux send-keys -t 3 "./polygon-edge server --price-limit 0 --json-rpc-block-range-limit 0 --json-rpc-batch-request-limit 0  --data-dir ./test-chain-4 --chain genesis.json --grpc-address :${GPRC_PORT4} --libp2p :${LIBP2P_PORT4} --jsonrpc :${RPC_PORT4} --seal" Enter
+

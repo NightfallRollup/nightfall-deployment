@@ -1,0 +1,38 @@
+{
+  "name": "nightfall_3_private",
+  "version": "1.0.0",
+  "description": "Optimistic Nightfall Private",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint --resolve-plugins-relative-to . --ext js,mjs,ts,tsx",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/EYBlockchain/nightfall_3_private.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/EYBlockchain/nightfall_3_private/issues"
+  },
+  "homepage": "https://github.com/EYBlockchain/nightfall_3_private#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^16.2.3",
+    "@commitlint/config-conventional": "^16.2.1",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^7.25.0",
+    "eslint-config-codfish": "^10.0.0",
+    "eslint-config-prettier": "^8.3.0",
+    "eslint-plugin-import": "^2.25.2",
+    "eslint-plugin-prettier": "^4.0.0",
+    "find-unused-exports": "^3.0.0",
+    "husky": "^7.0.4",
+    "prettier": "^2.2.1"
+  },
+  "dependencies": {
+    "aws-cdk-lib": "^2.41.0"
+  }
+}
