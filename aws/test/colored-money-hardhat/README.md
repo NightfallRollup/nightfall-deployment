@@ -102,7 +102,7 @@ npx hardhat transfer --accounts <account> --amount <amount> --network staging_ed
 ```
 Example:
 ```
-npx hardhat transfer --accounts 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --amount 1000 --network staging_edge      
+npx hardhat transfer --account 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --amount 1000 --network staging_edge      
 ```
 ## Run tests
 For running the tests you need to specify in the .env the following variables
