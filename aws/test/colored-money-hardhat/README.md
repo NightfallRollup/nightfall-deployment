@@ -49,6 +49,7 @@ npx hardhat run scripts/deploy_contract.ts --network mumbai
 
 ### Testing deployment in Edge
 Some hardhat tasks have been added to help with RLN testing (`balance`, `bank`, `mint`, `fund`). You could see the information about the tasks with the command `npx hardhat help <task>`.
+First of all you should execute the command `npx hardhat compile` to have all the artifacts to execute the tasks.
 
 > **_WARNING:_** In order to be able to execute the tasks, the address that access the blockchain should have some amount of the native token of the blockchain. If not the transaction will be reverted because not enough funds to cover the execution cost of the transaction.
 
