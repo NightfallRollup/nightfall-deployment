@@ -106,11 +106,13 @@ const Transactions = () => {
         });
 
       const safeValue = value.toString();
-      const { ercAddress } = commitmentsDB.find(c => {
+      const { ercAddress, tokenId } = commitmentsDB.find(c => {
         return tx.commitments.includes(c._id) || tx.nullifiers.includes(c.nullifier);
       })?.preimage ?? {
         ercAddress: '0x00',
+        tokenId: `0x${BigInt(0).toString(16).padStart(64, '0')}`,
       };
+
 
       // eslint-disable-next-line no-param-reassign
       if (tx?.blockNumberL2) tx.isOnChain = tx.blockNumberL2; // Temp for handling transfers
@@ -145,7 +147,9 @@ const Transactions = () => {
       }
 
       const { logoURI, decimals, id, symbol } = supportedTokens.find(
-        t => t.address.toLowerCase() === `0x${ercAddress.slice(-40).toLowerCase()}`,
+        t =>
+          t.address.toLowerCase() === `0x${ercAddress.slice(-40).toLowerCase()}` &&
+          `0x${BigInt(t.tokenId).toString(16).padStart(64, '0')}` === tokenId,
       ) ?? {
         logoURI: null,
         decimals: 0,

@@ -758,11 +758,13 @@ class ApplicationStack extends Stack {
           allowAllOutbound: true, // Rules to access the Fargate apps will be added by CDK
         });
 
-        ec2Sg.addIngressRule(Peer.ipv4('10.48.0.0/16'), Port.tcp(80), 'allow http access');
-        ec2Sg.addIngressRule(Peer.ipv4('10.48.0.0/16'), Port.tcp(443), 'allow https access');
-        ec2Sg.addIngressRule(Peer.ipv4('10.48.0.0/16'), Port.tcp(hostPort), 'allow https access');
+        const ec2InstanceCidr = connectTo === 'internal' ? '10.48.0.0/16' : '0.0.0.0/0';
+
+        ec2Sg.addIngressRule(Peer.ipv4(ec2InstanceCidr), Port.tcp(80), 'allow http access');
+        ec2Sg.addIngressRule(Peer.ipv4(ec2InstanceCidr), Port.tcp(443), 'allow https access');
+        ec2Sg.addIngressRule(Peer.ipv4(ec2InstanceCidr), Port.tcp(hostPort), 'allow https access');
         for (const sgPort of properties.sgPorts) {
-          ec2Sg.addIngressRule(Peer.ipv4('10.48.0.0/16'), Port.tcp(sgPort), 'allow https access');
+          ec2Sg.addIngressRule(Peer.ipv4(ec2InstanceCidr), Port.tcp(sgPort), 'allow https access');
         }
 
         // Create key pair

@@ -21,15 +21,16 @@ fi
 source ${SECRETS_ENV}
 set +o allexport
 
+cd ../test/colored-money-hardhat && npx hardhat compile
 if [ -z "${ACCOUNT}" ] || [ -z "${ENTITY_NAME}" ]; then
   if [ -z "${ACCOUNT}" ]; then
     echo "Empty ACCOUNT. Exiting..."
   else
     echo "Empty Entity name. Exiting..."
   fi
-  
-  cd ../test/colored-money-hardhat && npx hardhat banks --network ${DEPLOYER_ETH_NETWORK}
+
+  npx hardhat banks --network ${DEPLOYER_ETH_NETWORK}
   exit 1
 fi
 
-cd ../test/colored-money-hardhat && npx hardhat bank --account ${ACCOUNT} --name "${ENTITY_NAME}" --network ${DEPLOYER_ETH_NETWORK}
+npx hardhat bank --account ${ACCOUNT} --name "${ENTITY_NAME}" --network ${DEPLOYER_ETH_NETWORK}
