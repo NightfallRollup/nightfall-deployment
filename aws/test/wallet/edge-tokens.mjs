@@ -41,7 +41,7 @@ function newRlnToken(rlnToken, rlnTokenId) {
     address: RLN_CONTRACT_ADDRESS,
     logoURI: 'https://wallet-asset.matic.network/img/tokens/usdc.svg',
     tags: ['pos', 'erc20', 'swapable', 'metaTx'],
-    id: 'ethereum',
+    id: '',
     restrictions: {
       withdraw: '1000000000',
       deposit: '250000000',
