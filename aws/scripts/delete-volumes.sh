@@ -15,5 +15,5 @@ fi
 source ../env/${RELEASE}.env
 
 if [ -d "../volumes/${RELEASE}" ]; then
-  rm -rf ../volumes/${RELEASE}
+  sudo rm -rf ../volumes/${RELEASE}
 fi
