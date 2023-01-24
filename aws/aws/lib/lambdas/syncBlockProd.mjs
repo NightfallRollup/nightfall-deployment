@@ -62,8 +62,10 @@ exports.handler = async event => {
           historicalData: filteredData.slice(0, Math.min(MAX_L2_BLOCKS, filteredData.length)),
           maxBlock,
           isLast: !dataBlockNext?.Item,
-          hashBlockLast: dataBlockLast?.Item?.blockHash ?? null,
-          hashBlockNext: dataBlockNext?.Item?.blockHash ?? null,
+          rootBlockLast: dataBlockLast?.Item?.block?.root ?? null,
+          rootBlockNext: dataBlockNext?.Item?.block?.root ?? null,
+          numberBlockLast: dataBlockLast?.Item?.block?.blockNumberL2 ?? null,
+          numberBlockNext: dataBlockNext?.Item?.block?.blockNumberL2 ?? null,
         }),
       })
       .promise();
