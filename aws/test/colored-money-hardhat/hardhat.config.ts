@@ -5,38 +5,36 @@ import { UserConfig } from './helper-hardhat-config';
 import {
   addBank,
   addFunds,
-  getBalance,
-  getBalanceNative,
+  getBalanceToken,
   getBanks,
   getContract,
   mint,
-  transferNative,
+  transfer,
+  generateNightfallMnemonics,
 } from './scripts/common';
 
 // Define some tasks for token management
 task('balance', `Prints an account's RLN token balance`)
-  .addOptionalParam('token', 'Token for the balance', 'ETH')
+  .addOptionalParam(
+    'token',
+    'Token for the balance. Could be empty for the native token, RLN for the RLN token or the address of the ERC token in 0x format',
+    '',
+  )
   .addOptionalParam('entityid', `The entityId of the bank in the system`)
   .addParam('account', `The account's address`)
   .setAction(async (taskArgs, hre) => {
-    if (taskArgs.token === 'RLN') {
-      if (!taskArgs.entityid) {
-        console.log(
-          `The '--entityid' parameter of task 'balance' expects a value, but none was passed.`,
-        );
-      } else {
-        await getContract(hre).then(RLN => getBalance(RLN, taskArgs.account, taskArgs.entityid));
-      }
-    } else {
-      await getBalanceNative(hre, taskArgs.account);
-    }
+    await getContract(hre).then(RLN =>
+      getBalanceToken(RLN, hre, taskArgs.account, taskArgs.token, taskArgs.entityid),
+    );
   });
 
 task('transfer', `Transfer native token to the account`)
-  .addParam('account', `The account's address`)
+  .addOptionalParam('token', 'Token address', '')
+  .addOptionalParam('tokenid', 'Token id', '')
+  .addParam('account', `Account's addresses to transfer separated by ','`)
   .addParam('amount', `Amount of native token to be transferred`)
   .setAction(async (taskArgs, hre) => {
-    await transferNative(hre, taskArgs.account, taskArgs.amount);
+    await transfer(hre, taskArgs.account, taskArgs.amount, taskArgs.token, taskArgs.tokenid);
   });
 
 task('mint', `Mint RLN tokens for the bank`)
@@ -66,6 +64,12 @@ task('bank', `Add bank to RLN token system`)
 task('banks', `Get banks from the system`).setAction(async (taskArgs, hre) => {
   await getContract(hre).then(RLN => getBanks(RLN));
 });
+
+task('mnemonic', `Generate mnemonics`)
+  .addParam('amount', `Amount of mnemonics`)
+  .setAction(async taskArgs => {
+    await generateNightfallMnemonics(taskArgs.amount);
+  });
 
 // Hardhat config
 const config: HardhatUserConfig = {

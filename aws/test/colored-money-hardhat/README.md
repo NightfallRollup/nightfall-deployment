@@ -49,6 +49,7 @@ npx hardhat run scripts/deploy_contract.ts --network mumbai
 
 ### Testing deployment in Edge
 Some hardhat tasks have been added to help with RLN testing (`balance`, `bank`, `mint`, `fund`). You could see the information about the tasks with the command `npx hardhat help <task>`.
+First of all you should execute the command `npx hardhat compile` to have all the artifacts to execute the tasks.
 
 > **_WARNING:_** In order to be able to execute the tasks, the address that access the blockchain should have some amount of the native token of the blockchain. If not the transaction will be reverted because not enough funds to cover the execution cost of the transaction.
 
@@ -96,7 +97,7 @@ Example:
 ```
 npx hardhat balance --token ETH --account 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --network staging_edge
 ```
-- Transfer native token to an account
+- Transfer native token to accounts separated by ','
 ```
 npx hardhat transfer --account <account> --amount <amount> --network staging_edge      
 ```
@@ -104,6 +105,15 @@ Example:
 ```
 npx hardhat transfer --account 0x9C8B2276D490141Ae1440Da660E470E7C0349C63 --amount 1000 --network staging_edge      
 ```
+- Transfer ERC20 token to accounts separated by ','
+```
+npx hardhat transfer --account <account> --amount <amount> --token <token address> --network staging_edge      
+```
+Example:
+```
+npx hardhat transfer --account 0x9efc63e6914a7883ccd302c37bc690fff00b1eb7,0x2b2b71c145b3bd22fca39312181f2bce8087a90e --amount 1000 --token 0xe721F2D97c58b1D1ccd0C80B88256a152d27f0Fe --network staging_edge      
+```
+
 ## Run tests
 For running the tests you need to specify in the .env the following variables
 ```
