@@ -24,15 +24,17 @@ source ../env/init-env.env
 source ../env/aws.env
 
 echo -e "\nCreating CDK template..."
+
 vpcId=$(aws ec2 describe-vpcs \
   --region $REGION \
-  | jq ".Vpcs[] | select(.CidrBlock==\"10.48.0.0/16\") | .VpcId" \
+  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | select(.Tags[].Value==\"${ENV_NAME}-NightfallVPC\" or .Tags[].Value==\"${ENV_NAME^}-NightfallVPC\") | .VpcId" \
   | tr -d '"')
 
 if [ -z "${vpcId}" ]; then
-  echo "Couldn't read VPC ID. Exiting..."
-  echo 1
+  echo "VPC for ${ENV_NAME} doesn't exist. Exiting..."
+  exit 1
 fi
+
 # Create cdk template
 CDK_CONTEXT_FILE="../aws/contexts/cdk.context.${ENV_NAME,,}.json"
 CDK_TEMPLATE_FILE="../aws/contexts/cdk.context.template.json"

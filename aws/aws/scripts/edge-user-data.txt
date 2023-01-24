@@ -22,8 +22,8 @@ Content-Disposition: attachment; filename="userdata.txt"
 mkdir -p /home/ubuntu/edge
 cd /home/ubuntu/edge
 if [ ! -f polygon-edge_0.6.0_linux_amd64.tar.gz ]; then
-  wget https://github.com/0xPolygon/polygon-edge/releases/download/v0.6.0/polygon-edge_0.6.0_linux_amd64.tar.gz
-  tar -xvzf polygon-edge_0.6.0_linux_amd64.tar.gz
+  wget https://github.com/0xPolygon/polygon-edge/releases/download/v0.6.3/polygon-edge_0.6.3_linux_amd64.tar.gz
+  tar -xvzf polygon-edge_0.6.3_linux_amd64.tar.gz
 fi
 rm -rf test-chain-*
 tmux kill-session -t edge
