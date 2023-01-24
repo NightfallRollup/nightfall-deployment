@@ -79,7 +79,7 @@ export USER_AWS=$(shell aws configure get aws_access_key_id)
 export RESERVED_ENV=$(shell aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT}/Reserved_Env" | jq '.Parameter.Value' | tr -d "\"" | tr -d " ")
 ifeq ($(FORCE_ENV_BYPASS),)
   ifneq ($(RESERVED_ENV),Available )
-    ifneq ($(RESERVED_ENV),${USER_AWS} )
+    ifneq ($(RESERVED_ENV),${USER_AWS})
       $(error Environment ${RELEASE} used by ${RESERVED_ENV})
     endif
   endif
