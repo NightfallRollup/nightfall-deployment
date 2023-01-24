@@ -75,8 +75,8 @@ endif
 ECR_REPO=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
 NIGHTFALL_REPO=nightfall_3
 
-export USER_AWS=$(shell cat ~/.aws/credentials | sed  -n -e 's/^aws_access_key_id = //p')
-export RESERVED_ENV=$(shell aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT}/Reserved_Env" | jq '.Parameter.Value' | tr -d "\"" | tr -d " ") 
+export USER_AWS=$(shell aws configure get aws_access_key_id)
+export RESERVED_ENV=$(shell aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT}/Reserved_Env" | jq '.Parameter.Value' | tr -d "\"" | tr -d " ")
 ifeq ($(FORCE_ENV_BYPASS),)
   ifneq ($(RESERVED_ENV),Available )
     ifneq ($(RESERVED_ENV),${USER_AWS} )
@@ -176,19 +176,19 @@ read-dynamodb:
 
 # Get alarms
 get-alarms:
-	cd scripts && RELEASE=${RELEASE} COMMAND=alarms ./read-dashboard.sh 
+	cd scripts && RELEASE=${RELEASE} COMMAND=alarms ./read-dashboard.sh
 
-# Get metrics 
+# Get metrics
 get-metrics:
-	cd scripts && RELEASE=${RELEASE} COMMAND=metrics LIMIT=${LIMIT} ./read-dashboard.sh 
+	cd scripts && RELEASE=${RELEASE} COMMAND=metrics LIMIT=${LIMIT} ./read-dashboard.sh
 
 # Flush alarms
 flush-alarms:
-	cd scripts && RELEASE=${RELEASE} COMMAND=flush-alarms ./read-dashboard.sh 
+	cd scripts && RELEASE=${RELEASE} COMMAND=flush-alarms ./read-dashboard.sh
 
 # Flush metrics
 flush-metrics:
-	cd scripts && RELEASE=${RELEASE} COMMAND=flush-metrics ./read-dashboard.sh 
+	cd scripts && RELEASE=${RELEASE} COMMAND=flush-metrics ./read-dashboard.sh
 
 # Deregister proposer
 deregister-proposer:
@@ -218,9 +218,9 @@ test-admin:
 
 kill-test_contracts:
 	tmux kill-session -t ${RELEASE}-test || true
-	docker stop client worker 
+	docker stop client worker
 
-# Mnemonic 
+# Mnemonic
 mnemonic:
 	cp test/client/client-command.mjs nightfall_3/cli/src
 	cd scripts && DELETE_DB=y RELEASE=${RELEASE} CLIENT_COMMAND=mnemonic MNEMONIC="${MNEMONIC}" ./client-command.sh
@@ -252,7 +252,7 @@ launch-client:
 
 kill-client:
 	tmux kill-session -t ${RELEASE}-client || true
-	docker stop client worker mongodb 
+	docker stop client worker mongodb
 
 ssh-edge:
 	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=edge ./ssh-ec2.sh
@@ -599,7 +599,7 @@ restart-dashboard:
 	make start-dashboard
 
 restart-geth:
-	make stop-geth; 
+	make stop-geth;
 	@if [ "${DEPLOYER_ETH_NETWORK}" = "staging" ]; then\
 	  make start-geth; \
 	else \
@@ -758,7 +758,7 @@ upgrade-contracts:
 
 kill-deployer:
 	tmux kill-session -t ${RELEASE}-deployer || true
-	docker stop worker 
+	docker stop worker
 
 # Check differences between current and prepared deployment
 deploy-diff:
