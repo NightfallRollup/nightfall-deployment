@@ -21,7 +21,6 @@ const getRLNBalance = async (
         )?.balance || 0;
     } catch (error) {
       // No deposits pending balance
-      console.log('No deposits pending');
     }
   }
 
@@ -33,7 +32,6 @@ const getRLNBalance = async (
       )?.balance || 0;
   } catch (error) {
     // No balance
-    console.log('No balance');
   }
 
   balance = balanceTokenPendingDeposits + balanceTokenNightfall;
