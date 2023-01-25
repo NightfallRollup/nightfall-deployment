@@ -2,11 +2,47 @@ import { expect } from 'chai';
 import { UserFactory } from 'nightfall-sdk';
 import { UserConfig } from '../helper-hardhat-config';
 
+const getRLNBalance = async (
+  user: any,
+  contractAddress: string,
+  entityId: string,
+  onlyConfirmed: boolean = false,
+) => {
+  let balance = 0;
+  let balanceTokenPendingDeposits = 0;
+  let balanceTokenNightfall = 0;
+
+  if (!onlyConfirmed) {
+    try {
+      const pendingDeposits = await user.checkPendingDeposits();
+      balanceTokenPendingDeposits =
+        pendingDeposits[contractAddress.toLowerCase()].find((t: { tokenId: string }) =>
+          t?.tokenId?.includes(entityId),
+        )?.balance || 0;
+    } catch (error) {
+      // No deposits pending balance
+    }
+  }
+
+  try {
+    const balancesNightfall = await user.checkNightfallBalances();
+    balanceTokenNightfall =
+      balancesNightfall[UserConfig.CONTRACT_ADDRESS.toLowerCase()].find((t: { tokenId: string }) =>
+        t?.tokenId?.includes(entityId),
+      )?.balance || 0;
+  } catch (error) {
+    // No balance
+  }
+
+  balance = balanceTokenPendingDeposits + balanceTokenNightfall;
+  return balance;
+};
+
 describe('Test RLN functionality', async function () {
   let user: any;
   let user2: any;
-  const valueDeposit = '10';
-  const entityId = '1';
+  const valueDeposit = UserConfig.VALUE || '10';
+  const entityId = UserConfig.TOKEN_ID || '1';
 
   before(async () => {
     user = await UserFactory.create({
@@ -20,8 +56,9 @@ describe('Test RLN functionality', async function () {
       clientApiUrl: UserConfig.CLIENT_API_URL,
       ethereumPrivateKey: UserConfig.PRIVATE_KEY,
     });
-    console.log(`RLN contract address is ${UserConfig.CONTRACT_ADDRESS}`);
-    console.log(`TokenId for tests is ${entityId}`);
+
+    console.log(`    RLN contract address is ${UserConfig.CONTRACT_ADDRESS}`);
+    console.log(`    TokenId for tests is ${entityId}. Value is ${valueDeposit}`);
   });
 
   it('Client alive', async () => {
@@ -37,42 +74,42 @@ describe('Test RLN functionality', async function () {
   });
 
   it('Deposits', async () => {
-    const pendingDepositsInitial = await user.checkPendingDeposits();
-    let balanceInitial = 0;
-    try {
-      balanceInitial = pendingDepositsInitial[UserConfig.CONTRACT_ADDRESS.toLowerCase()][1].balance;
-    } catch (error) {
-      // No initial pending balance
+    const balanceInitial = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId);
+    for (let i = 0; i < 2; i++) {
+      try {
+        // Make deposit
+        const txReceipts = await user.makeDeposit({
+          tokenContractAddress: UserConfig.CONTRACT_ADDRESS,
+          value: valueDeposit,
+          tokenId: entityId,
+          feeWei: '0',
+        });
+        // Check we have transaction hashes in Nightfall
+        expect(txReceipts.txReceipt.transactionHash).to.a('string').and.to.include('0x');
+        expect(txReceipts.txReceiptL2.transactionHash).to.a('string').and.to.include('0x');
+        expect(user.nightfallDepositTxHashes[0]).to.a('string').and.to.include('0x');
+      } catch (error) {
+        console.log('Error in deposit', error);
+      }
     }
-    try {
-      // Make deposit
-      const txReceipts = await user.makeDeposit({
-        tokenContractAddress: UserConfig.CONTRACT_ADDRESS,
-        value: valueDeposit,
-        tokenId: entityId,
-        feeWei: '0',
-      });
-      // Check we have transaction hashes in Nightfall
-      expect(txReceipts.txReceipt.transactionHash).to.a('string').and.to.include('0x');
-      expect(txReceipts.txReceiptL2.transactionHash).to.a('string').and.to.include('0x');
-      expect(user.nightfallDepositTxHashes[0]).to.a('string').and.to.include('0x');
-    } catch (error) {
-      console.log('Error in deposit', error);
-    }
-    const pendingDepositsFinal = await user.checkPendingDeposits();
-    const balanceFinal = pendingDepositsFinal[UserConfig.CONTRACT_ADDRESS.toLowerCase()][1].balance;
-    expect(balanceFinal - balanceInitial).to.be.equal(Number(valueDeposit));
+    const balanceFinal = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId);
+    expect(balanceFinal - balanceInitial).to.be.equal(2 * Number(valueDeposit));
   });
 
   it('Transfers', async () => {
-    const balanceNightfallInitial = await user.checkNightfallBalances();
-    let balanceInitial = 0;
-    try {
-      balanceInitial =
-        balanceNightfallInitial[UserConfig.CONTRACT_ADDRESS.toLowerCase()][0].balance;
-    } catch (error) {
-      // No initial pending balance
+    let confirmedBalance = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId, true);
+    while (confirmedBalance < 2 * Number(valueDeposit)) {
+      console.log(
+        `Waiting for confirmed balance to be > ${
+          2 * Number(valueDeposit)
+        } (${confirmedBalance})...`,
+      );
+      await new Promise(resolve => setTimeout(resolve, 10000));
+      confirmedBalance = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId, true);
     }
+    console.log(`      Confirmed balance: ${confirmedBalance}`);
+
+    const balanceInitial = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId);
     try {
       // Make transfer
       const txReceipts = await user.makeTransfer({
@@ -91,21 +128,12 @@ describe('Test RLN functionality', async function () {
       console.log('Error in transfer', error);
     }
 
-    const balanceNightfallFinal = await user.checkNightfallBalances();
-    const balanceFinal =
-      balanceNightfallFinal[UserConfig.CONTRACT_ADDRESS.toLowerCase()][0].balance;
+    const balanceFinal = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId);
     expect(balanceInitial - balanceFinal).to.be.equal(Number(valueDeposit));
   });
 
   it('Withdraws', async () => {
-    const balanceNightfallInitial = await user.checkNightfallBalances();
-    let balanceInitial = 0;
-    try {
-      balanceInitial =
-        balanceNightfallInitial[UserConfig.CONTRACT_ADDRESS.toLowerCase()][0].balance;
-    } catch (error) {
-      // No initial pending balance
-    }
+    const balanceInitial = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId);
     try {
       // Make withdrawal
       const txReceipts = await user.makeWithdrawal({
@@ -121,9 +149,7 @@ describe('Test RLN functionality', async function () {
     } catch (error) {
       console.log('Error in withdraw', error);
     }
-    const balanceNightfallFinal = await user.checkNightfallBalances();
-    const balanceFinal =
-      balanceNightfallFinal[UserConfig.CONTRACT_ADDRESS.toLowerCase()][0].balance;
+    const balanceFinal = await getRLNBalance(user, UserConfig.CONTRACT_ADDRESS, entityId);
     expect(balanceInitial - balanceFinal).to.be.equal(Number(valueDeposit));
   });
 

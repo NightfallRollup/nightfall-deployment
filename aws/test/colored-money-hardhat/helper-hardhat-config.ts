@@ -10,6 +10,8 @@ const CLIENT_API_URL = process.env.CLIENT_API_URL || '';
 const MNEMONIC = process.env.MNEMONIC || '';
 const OPTIMIST_API_URL = process.env.OPTIMIST_API_URL || '';
 const OPTIMIST_WS = process.env.OPTIMIST_WS || '';
+const TOKEN_ID = process.env.TOKEN_ID || '';
+const VALUE = process.env.VALUE || '';
 
 export const UserConfig = {
   PRIVATE_KEY,
@@ -21,4 +23,6 @@ export const UserConfig = {
   MNEMONIC,
   OPTIMIST_API_URL,
   OPTIMIST_WS,
+  TOKEN_ID,
+  VALUE,
 };
