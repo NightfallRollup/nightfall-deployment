@@ -21,6 +21,7 @@ const getRLNBalance = async (
         )?.balance || 0;
     } catch (error) {
       // No deposits pending balance
+      console.log('No deposits pending');
     }
   }
 
@@ -32,6 +33,7 @@ const getRLNBalance = async (
       )?.balance || 0;
   } catch (error) {
     // No balance
+    console.log('No balance');
   }
 
   balance = balanceTokenPendingDeposits + balanceTokenNightfall;
@@ -85,9 +87,9 @@ describe('Test RLN functionality', async function () {
           feeWei: '0',
         });
         // Check we have transaction hashes in Nightfall
-        expect(txReceipts.txReceipt.transactionHash).to.a('string').and.to.include('0x');
-        expect(txReceipts.txReceiptL2.transactionHash).to.a('string').and.to.include('0x');
-        expect(user.nightfallDepositTxHashes[0]).to.a('string').and.to.include('0x');
+        expect(txReceipts.txReceipt.transactionHash).to.be.a('string').and.to.include('0x');
+        expect(txReceipts.txReceiptL2.transactionHash).to.be.a('string').and.to.include('0x');
+        expect(user.nightfallDepositTxHashes[0]).to.be.a('string').and.to.include('0x');
       } catch (error) {
         console.log('Error in deposit', error);
       }
@@ -122,8 +124,8 @@ describe('Test RLN functionality', async function () {
       });
 
       // Check we have transaction hashes in Nightfall
-      expect(txReceipts.txReceiptL2.transactionHash).to.a('string').and.to.include('0x');
-      expect(user.nightfallTransferTxHashes[0]).to.a('string').and.to.include('0x');
+      expect(txReceipts.txReceiptL2.transactionHash).to.be.a('string').and.to.include('0x');
+      expect(user.nightfallTransferTxHashes[0]).to.be.a('string').and.to.include('0x');
     } catch (error) {
       console.log('Error in transfer', error);
     }
@@ -144,8 +146,8 @@ describe('Test RLN functionality', async function () {
         feeWei: '0',
       });
       // Check we have transaction hashes in Nightfall
-      expect(txReceipts.txReceiptL2.transactionHash).to.a('string').and.to.include('0x');
-      expect(user.nightfallWithdrawalTxHashes[0]).to.a('string').and.to.include('0x');
+      expect(txReceipts.txReceiptL2.transactionHash).to.be.a('string').and.to.include('0x');
+      expect(user.nightfallWithdrawalTxHashes[0]).to.be.a('string').and.to.include('0x');
     } catch (error) {
       console.log('Error in withdraw', error);
     }
