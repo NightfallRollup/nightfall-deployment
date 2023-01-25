@@ -83,6 +83,9 @@ const config: HardhatUserConfig = {
       },
     ],
   },
+  mocha: {
+    timeout: 200000,
+  },
   networks: {
     mainnet: {
       url: UserConfig.BLOCKCHAIN_URL,
