@@ -41,12 +41,14 @@ const appStack = new ApplicationStack(app, `${envAttr.name}-Apps`, {
 const { services, albs } = appStack;
 
 // Create wAF
+/*
 new WAFStack(app, `${envAttr.name}-WAF`, {
   description: `${envAttr.name} WAF Stack`,
   env,
   options,
   alb: albs[0]._alb, // External ALB
 });
+*/
 
 
 // Create Dashboard
