@@ -28,13 +28,14 @@ natGatewayIds=()
 
 echo "Creating VPC environment..."
 echo ""
-vpcId=$(aws ec2 describe-vpcs \
-  --region $REGION \
-  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | .VpcId" \
-  | tr -d '"')
 
-if [ "${vpcId}" ]; then
-  echo "VPC ${vpcId} for ${ENV_NAME} already exists. Exiting..."
+vpcExists=$(aws ec2 describe-vpcs \
+  --region $REGION \
+  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | .Tags[].Value" \
+  | grep ${ENV_NAME})
+
+if [ ! -z "${vpcExists}" ]; then
+  echo "VPC ${vpcName} for ${ENV_NAME} already exists. Exiting..."
   exit 1
 fi
 
