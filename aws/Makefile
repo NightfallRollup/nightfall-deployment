@@ -299,6 +299,8 @@ deploy-wallet-local:
 		cp tmp/wallet/TokenType.ts nightfall_3/wallet/src/static/supported-token-lists; \
 		cp tmp/wallet/walletIndex.jsx nightfall_3/wallet/src/views/wallet/index.jsx; \
 		cp tmp/wallet/local-storage.js nightfall_3/wallet/src/utils/lib/local-storage.js; \
+		cp tmp/wallet/index.jsx nightfall_3/wallet/src/hooks/User/index.jsx; \
+		cp tmp/wallet/database.js nightfall_3/wallet/src/nightfall-browser/services/database.js; \
 		cp tmp/config/default.js nightfall_3/config/default.js; \
 	fi
 	cd scripts && RELEASE=${RELEASE} ./deploy-wallet-local.sh
