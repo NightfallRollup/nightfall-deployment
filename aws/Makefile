@@ -345,6 +345,9 @@ push-all:
 build-client:
 	@cp docker/client-docker-entrypoint.sh nightfall_3/nightfall-client/docker-entrypoint.sh
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+		cp tmp/client/finalise-withdrawal.mjs nightfall_3/nightfall-client/src/services/; \
+	fi
 	@make build-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 
 build-optimist:
