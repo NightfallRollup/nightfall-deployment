@@ -281,6 +281,7 @@ deploy-wallet:
 		cp tmp/wallet/index.jsx nightfall_3/wallet/src/hooks/User/index.jsx; \
 		cp tmp/wallet/database.js nightfall_3/wallet/src/nightfall-browser/services/database.js; \
 		cp tmp/config/default.js nightfall_3/config/default.js; \
+		cp tmp/wallet/commitmentsVerification.js nightfall_3/wallet/src/utils/CommitmentsBackup/; \
 	fi
 	cd scripts && RELEASE=${RELEASE} ./deploy-wallet.sh
 
@@ -302,6 +303,7 @@ deploy-wallet-local:
 		cp tmp/wallet/index.jsx nightfall_3/wallet/src/hooks/User/index.jsx; \
 		cp tmp/wallet/database.js nightfall_3/wallet/src/nightfall-browser/services/database.js; \
 		cp tmp/config/default.js nightfall_3/config/default.js; \
+		cp tmp/wallet/commitmentsVerification.js nightfall_3/wallet/src/utils/CommitmentsBackup/; \
 	fi
 	cd scripts && RELEASE=${RELEASE} ./deploy-wallet-local.sh
 
