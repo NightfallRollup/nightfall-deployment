@@ -347,17 +347,29 @@ build-client:
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	if [ "${OVERWRITE_CODE}" = "y" ]; then\
 		cp tmp/client/finalise-withdrawal.mjs nightfall_3/nightfall-client/src/services/; \
+		cp tmp/client/database.mjs nightfall_3/nightfall-client/src/services/; \
+		cp tmp/client/block-proposed.mjs nightfall_3/nightfall-client/src/event-handlers/; \
 	fi
 	@make build-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 
 build-optimist:
 	@cp docker/optimist-docker-entrypoint.sh nightfall_3/nightfall-optimist/docker-entrypoint.sh
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+		cp tmp/optimist/database.mjs nightfall_3/nightfall-optimist/src/services/; \
+		cp tmp/optimist/block-proposed.mjs nightfall_3/nightfall-optimist/src/event-handlers/; \
+		cp tmp/optimist/state-sync.mjs nightfall_3/nightfall-optimist/src/services/; \
+		cp tmp/optimist/index.mjs nightfall_3/nightfall-optimist/src/; \
+	fi
 	@make build-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
 
 build-adversary:
 	@cp docker/adversary.Dockerfile nightfall_3/docker
 	@cp docker/optimist-docker-entrypoint.sh nightfall_3/nightfall-optimist/docker-entrypoint.sh
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+		cp tmp/optimist/database.mjs nightfall_3/nightfall-optimist/src/services/; \
+		cp tmp/optimist/block-proposed.mjs nightfall_3/nightfall-optimist/src/event-handlers/; \
+	fi
 	@cd nightfall_3 && npm run build-adversary
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-adversary GIT_COMMIT=${GIT_COMMIT}
