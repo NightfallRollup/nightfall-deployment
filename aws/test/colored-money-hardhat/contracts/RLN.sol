@@ -3,8 +3,11 @@ pragma solidity ^0.8.0;
 
 /******************************
 COLORED MONEY IMPLEMENTATION PROPOSAL
-BY: JAVIER NIETO CENTENO
-JNIETOCE@GRUPOSANTANDER.COM
+BY: Santander Crypto and Blockchain Center of Excelence 
+JAVIER NIETO CENTENO
+PRZEMYSLAW SIEMION
+DAVID ALONSO PÉREZ
+DIEGO JOSÉ ABENGÓZAR VILAR
 */
 
 import "@openzeppelin/contracts/token/ERC1155/extensions/ERC1155Supply.sol";
@@ -12,14 +15,12 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/access/AccessControlEnumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
 
-
-
 contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
 
-    event btf(address, address, uint256 );
     event Minted(uint16, uint256);
     event Burnt(address, uint16, uint256);
     event Redemption(address, address, uint256);
+    event custAccept(address indexed bank, address customer);
     
     uint256[] public ids;
     uint256[] public amounts;
@@ -31,16 +32,14 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
     bytes32 public constant ENTITY_MANAGER = keccak256("ENTITY_MANAGER");
     bytes32 public constant REGULATOR = keccak256("REGULATOR");
     
+    // Reserve requirement and multiplier values are multiplied by 100 to allow for two decimal places
     // Ratio RESREQ to 1 (1/RESREQ reserves %)
-    uint256 private RESERVESREQ = 10;
+    uint256 private RESERVESREQ = 10 * 100;
     
     // Individual multiplier for each bank (<= RESREQ)
     mapping(address => uint256) private Multiplier;
 
     mapping(address => uint256) private TotalAllowanceByBank;
-
-    // A single bank model
-    mapping(address => uint256) private Allowance;
 
     // Entities that can issue tokens
     struct Entity {
@@ -60,20 +59,15 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
 
     mapping (address => address) private WalletToBank;
     // TODO be able to see the clients of bank
-    
-    modifier onlyEntityAddr() {
-        require(EntityCheck[msg.sender] || hasRole(REGULATOR, msg.sender), "Caller is not the owner of the entity");
-        _;    
-    }
 
     // Checks that the entity exists and caller is the owner of that entity
     modifier onlyEntity(uint16 entityId) {
         require(entityId < Entities.length, "Entity does not exist");
-        require(Entities[entityId].entityAddress == _msgSender() || hasRole(REGULATOR, _msgSender()), "Caller is not the owner of the entity");
+        require(Bank2Id[msg.sender] == entityId || hasRole(REGULATOR, msg.sender), "Caller is not the owner of the entity");
         _;
     }
 
-    constructor(string memory uri) ERC1155(uri) {
+    constructor(string memory uri_addr) ERC1155(uri_addr) {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
 
         // Assign to the creator the role of entity manager, just for convinience
@@ -83,8 +77,10 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
         _setupRole(REGULATOR, _msgSender());
 
         Entity memory newEntity;
+
+        //Reserve Token 0 to model customer allowances
         newEntity.entityName = "Reserved";
-        newEntity.entityAddress = address(0); // TODO Maybe leave unset
+        newEntity.entityAddress = address(0); 
         Entities.push(newEntity);
     }
 
@@ -122,6 +118,7 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
     // To be invoked by client who wants to redeem his allowance
     function redeem(uint256 amount) public {
         require(!EntityCheck[msg.sender], "Banks should not redeem?");
+        // TODO checks...
         // Burn operation should only be performed by the bank, after listening to this event...
         emit Redemption(msg.sender, WalletToBank[msg.sender], amount); // Privacy?
     }
@@ -130,25 +127,28 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
     // Adds all balances of diferent tokens in that wallet
     function consolidatedBalanceOf(address bank) public view returns (uint256) {
         require(EntityCheck[bank], "Not a bank");
-        uint256[] memory balances = getTokensByBank(bank);
+
         uint256 balance = 0;
-        // Dont pick token 0
-        for(uint i = 1; i < balances.length; i++)
-            balance += balances[i];
+        // Dont pick token 0 (shouldnt matter here since banks dont have allowance)
+        for(uint256 id = 1; id < Entities.length; id++)
+            balance += balanceOf(bank, id);
         return balance;
     }
 
     // Transfer tokens of diferent colors until get the desired amount
-    function consolidatedTransfer(address fromBank, address toBank, uint256 value, bytes calldata _data) public {
+    function consolidatedTransfer(address fromBank, address toBank, uint256 value, bytes calldata _data) private {
         require(EntityCheck[fromBank], "No bank for the sender");
         require(EntityCheck[toBank], "No bank for the recipient");
         // Doubt: maybe we should mint automatically if token reserves are not sufficient
         require(consolidatedBalanceOf(fromBank) >= value, "Not enough funds!");
 
         // Retrieve all balances
-        uint256[] memory balances = getTokensByBank(fromBank);
+        uint256[] memory balances = new uint256[](Entities.length);
+        for (uint256 id = 0; id < Entities.length; id++)
+            balances[id] = balanceOf(fromBank, id);
 
-        uint16 fromBankId = Bank2Id[fromBank];
+
+        //uint16 fromBankId = Bank2Id[fromBank]; //No more needed
         uint16 toBankId = Bank2Id[toBank];
 
         // Allocate memory for the arrays. 
@@ -190,23 +190,13 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
 
         // Make the appropriate transfer
         // ids = [2, 1, 4, 5, ...]
-        // smounts = [2, 25, 17 ,44, ...]
+        // amounts = [2, 25, 17 ,44, ...]
         _safeBatchTransferFrom(fromBank, toBank, ids, amounts, _data);
     }
 
     
-    // Iterate over every possible token, and return the array of balances (some of them will be zero in this case, including id 0)
-    function getTokensByBank(address from) private view returns(uint256[] memory balances) {
-        require(EntityCheck[from], "Only banks have tokens");
-        uint256[] memory fbalances = new uint256[](Entities.length);
-        // It also returns token 0 for simplicity when managing indexes in other functions, but we will always disregard it
-        for (uint256 id = 0; id < Entities.length; id++)
-            fbalances[id] = balanceOf(from, id);
-        return fbalances;
-    }
-
     //Adds a new entity to the collection
-    //Requires teh NTITY_MANAGER role
+    //Requires the ENTITY_MANAGER role
     //
     //Simple management of entities, for the testing we do not include delete or modify entities.
     function addEntity(string memory name, address wallet) public onlyRole(ENTITY_MANAGER) {   
@@ -228,13 +218,13 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
         return Entities;
     }
 
-    // Needed to properly implemet abn ERC1155
-    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControlEnumerable) returns (bool) {        
+    // Needed to properly implement an ERC1155
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155, AccessControlEnumerable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
     // Needed in an ERC1155. We may use this to provide entity information
-    // So far it points to non-existatnt web
+    // So far it points to non-existent web
     function uri(uint256 entityId) public view virtual override returns (string memory) {
         return string(abi.encodePacked("https://test.coloredmoney.com/entities/", Strings.toString(entityId)));
     }
@@ -249,24 +239,16 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
     }
 
     // Banks multiplier getter and setter
-    function setMultiplier(uint256 newMul) public onlyEntityAddr() {
+    function setMultiplier(address entityAddr,  uint256 newMul) public onlyEntity(Bank2Id[entityAddr]) {
         require(newMul <= RESERVESREQ, "Not within regulatory limit");
-        Multiplier[msg.sender] = newMul;
+        Multiplier[entityAddr] = newMul;
     }
 
-    function getMultiplier(address entityAddr) public view onlyEntityAddr() returns(uint256) {
+    function getMultiplier(address entityAddr) public view returns(uint256) {
         return Multiplier[entityAddr];
-    }
-    
-    // Do we need this anymore? bft event?
-    function _beforeTokenTransfer(address operator, address from, address to, uint256[] memory ids, uint256[] memory amounts, bytes memory data) internal virtual override {
-        super._beforeTokenTransfer(operator, from, to, ids, amounts, data);
-        emit btf(from,to,0);
     }
 
     // Customer allowances management
-    event custAccept(address indexed bank, address customer);
-
     function acceptCustomer(address customer) public returns(bool) {
         require(EntityCheck[msg.sender], "Only an Entity can onboard");
         require(!EntityCheck[WalletToBank[customer]], "Already a customer");
@@ -276,7 +258,8 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
     }
 
     // Using onlyEntity also checks if the sender is the regulator. If we want to get rid of the array maybe its better to create a new onlyEntity verification
-    function getTotalAllowance(uint16 entityId) public view onlyEntity(entityId) returns(uint256) {
+    function getTotalAllowance(uint16 entityId) public view returns(uint256) {
+        require(entityId < Entities.length, "Not an entity");
         return TotalAllowanceByBank[Entities[entityId].entityAddress];
     }
 
@@ -284,49 +267,57 @@ contract RLN is ERC1155Supply, AccessControlEnumerable, Ownable {
         require(EntityCheck[msg.sender] , "Only an Entity can approve");
         require(WalletToBank[spender] == msg.sender, "Not a customer");
         // Check reserves requirement
-        // require(RESERVESREQ * consolidatedBalanceOf(msg.sender) > (TotalAllowanceByBank[msg.sender] + value), "Not Basel compliant");
+        // require( (RESERVESREQ * consolidatedBalanceOf(msg.sender))/100 > (TotalAllowanceByBank[msg.sender] + value), "Not Basel compliant");
         
         // Doubt: do we have different roles within the bank?
-        require(Multiplier[msg.sender] * consolidatedBalanceOf(msg.sender) > (TotalAllowanceByBank[msg.sender] + value), "Increase your multiplier");
-        Allowance[spender] += value;
+        require( (Multiplier[msg.sender] * consolidatedBalanceOf(msg.sender))/100 > (TotalAllowanceByBank[msg.sender] + value), "Increase your multiplier");
+        _mint(spender, 0, value, "0x00");
         TotalAllowanceByBank[msg.sender] += value;
     }
 
     // If token 0, the client "sends allowance" to other client, and in the process the banks exchange their colored tokens
-    function safeTransferFrom(address to, uint256 id, uint256 amount, bytes calldata data) public {
+    function safeTransfer(address to, uint256 id, uint256 amount, bytes calldata data) public {
         if (id == 0) {
+            // We check first if the transfer can be made at banks level
             address fromBank = WalletToBank[msg.sender];
             address toBank = WalletToBank[to];
-
-            require(Allowance[msg.sender] >= amount, "Insufficient balance");
             consolidatedTransfer(fromBank, toBank, amount, data);
-            // Change allowances after consolidating transfer
-            Allowance[msg.sender] -= amount;
-            Allowance[to] += amount;
-            
         } else {
             require(EntityCheck[msg.sender]);
-            super.safeTransferFrom(msg.sender, to, id, amount, data);
         }
-    }
-
-    // Both the client and his bank can see the allowance
-    function getAllowance(address client) public view returns(uint256) {
-        require(msg.sender == client || msg.sender == WalletToBank[client], "Not allowed");
-        return Allowance[client];
+        super.safeTransferFrom(msg.sender, to, id, amount, data);
     } 
 
-    // Default behaviour if the token is not 0. Otherwise, if its a client return its allowance, if it a bank return 0 
-    // (dont throw an error because some methods expect to get the full array)
-    function balanceOf(address owner, uint tokenid) public override view returns (uint256) {
-        // Privacy?
-        if (tokenid != 0) {
-            return super.balanceOf(owner, tokenid);
-        } else {
-            if (EntityCheck[owner]) {
-                return 0;
-            }
-            return Allowance[owner];
-        }
-    }
+
+/* Overload ERC-20 methods for compatibility
+function balanceOf(address client) public override view returns (uint256) {
+    if (EntityCheck[client]) return 0;
+    return balanceOf(client, 0);
+}
+function transfer(address _to, uint256 _value) public returns (bool success) {
+    safeTransfer(_to, 0, _value, 0x00);
+    emit Transfer(msg.sender, _to, value);
+    //return ...;
+}
+function name() public view returns (string) {
+    //return ...;
+}
+function symbol() public view returns (string) {
+    //return ...;
+}
+function decimals() public view returns (uint8) {
+    return 0;
+}
+function totalSupply() public view returns (uint256)
+function transferFrom(address _from, address _to, uint256 _value) public returns (bool success) {
+    //safeTransferFrom(_from, _to, 0, _value, 0x00);
+    emit Transfer(_from, _to, value);
+    //return ...;
+}
+function approve(address _spender, uint256 _value) public returns (bool success)
+function allowance(address _owner, address _spender) public view returns (uint256 remaining)
+event Transfer(address indexed _from, address indexed _to, uint256 _value)
+event Approval(address indexed _owner, address indexed _spender, uint256 _value)
+*/
+
 }
