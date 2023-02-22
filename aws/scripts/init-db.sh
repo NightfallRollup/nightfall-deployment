@@ -93,6 +93,7 @@ for i in `seq ${SINGLE_OPTIMIST} 1 ${OPTIMIST_N}`; do
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockNumberL2:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockHash:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockNumber:-1});\
+     db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({transactionHashes:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({proposer: -1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({mempool: -1})"
      #db.${CHECKPOINT_COLLECTION}.updateOne({_id: 1}, {$COMMAND:{checkpoint: 0}}, upsert=true)"
