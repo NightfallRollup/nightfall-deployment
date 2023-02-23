@@ -104,7 +104,6 @@ const proposerAppAttr = {
       LOG_LEVEL: process.env.PROPOSER_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.PROPOSER_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.PROPOSER_LOG_HTTP_FULL_DATA,
-      ENVIRONMENT: process.env.ENVIRONMENT,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       GAS_MULTIPLIER: process.env.GAS_MULTIPLIER,
       GAS_PRICE: process.env.GAS_PRICE,
@@ -113,6 +112,7 @@ const proposerAppAttr = {
       BLOCKCHAIN_PATH: process.env.BLOCKCHAIN_PATH,
       TIMER_CHANGE_PROPOSER_SECOND: process.env.PROPOSER_TIMER_CHANGE_PROPOSER_SECOND,
       MAX_ROTATE_TIMES: process.env.PROPOSER_MAX_ROTATE_TIMES,
+      GAS_ESTIMATE_ENDPOINT: process.env.GAS_ESTIMATE_ENDPOINT,
     },
     secretVars: [
       {
@@ -182,7 +182,6 @@ const challengerAppAttr = {
       LOG_LEVEL: process.env.CHALLENGER_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.CHALLENGER_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.CHALLENGER_LOG_HTTP_FULL_DATA,
-      ENVIRONMENT: process.env.ENVIRONMENT,
       BLOCKCHAIN_PATH: process.env.BLOCKCHAIN_PATH,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       GAS_PRICE: process.env.GAS_PRICE,
@@ -265,7 +264,6 @@ const optimistAppAttr = {
       IS_CHALLENGER: process.env.OPTIMIST_IS_CHALLENGER,
       AUTOSTART_RETRIES: process.env.OPTIMIST_AUTOSTART_RETRIES,
       MONGO_URL: process.env.MONGO_URL,
-      ENVIRONMENT: process.env.ENVIRONMENT,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       GAS_PRICE: process.env.GAS_PRICE,
       FROM_ADDRESS: process.env.DEPLOYER_ADDRESS,
@@ -557,7 +555,7 @@ const clientAppAttr = {
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
       PROTOCOL: process.env.CLIENT_PROTOCOL,
       COMMITMENTS_DB: process.env.COMMITMENTS_DB,
-      ENVIRONMENT: process.env.ENVIRONMENT,
+      ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
     },
     secretVars: [

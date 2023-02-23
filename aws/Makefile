@@ -4,7 +4,7 @@
 
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
-NIGHTFALL_BRANCH=765f64df5e813cd24b7cf5f6392d2d4c8433d107
+NIGHTFALL_BRANCH=927c6d0060c76c65794b3f227b49ae9d2a910cd4
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -278,8 +278,6 @@ deploy-wallet:
 		cp tmp/wallet/TokenType.ts nightfall_3/wallet/src/static/supported-token-lists; \
 		cp tmp/wallet/walletIndex.jsx nightfall_3/wallet/src/views/wallet/index.jsx; \
 		cp tmp/wallet/local-storage.js nightfall_3/wallet/src/utils/lib/local-storage.js; \
-		cp tmp/wallet/index.jsx nightfall_3/wallet/src/hooks/User/index.jsx; \
-		cp tmp/wallet/database.js nightfall_3/wallet/src/nightfall-browser/services/database.js; \
 		cp tmp/config/default.js nightfall_3/config/default.js; \
 		cp tmp/wallet/commitmentsVerification.js nightfall_3/wallet/src/utils/CommitmentsBackup/; \
 	fi
@@ -300,8 +298,6 @@ deploy-wallet-local:
 		cp tmp/wallet/TokenType.ts nightfall_3/wallet/src/static/supported-token-lists; \
 		cp tmp/wallet/walletIndex.jsx nightfall_3/wallet/src/views/wallet/index.jsx; \
 		cp tmp/wallet/local-storage.js nightfall_3/wallet/src/utils/lib/local-storage.js; \
-		cp tmp/wallet/index.jsx nightfall_3/wallet/src/hooks/User/index.jsx; \
-		cp tmp/wallet/database.js nightfall_3/wallet/src/nightfall-browser/services/database.js; \
 		cp tmp/config/default.js nightfall_3/config/default.js; \
 		cp tmp/wallet/commitmentsVerification.js nightfall_3/wallet/src/utils/CommitmentsBackup/; \
 	fi
