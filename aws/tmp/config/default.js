@@ -93,14 +93,13 @@ module.exports = {
   OPTIMIST_HOST: process.env.OPTIMIST_HOST || 'optimist',
   OPTIMIST_PORT: process.env.OPTIMIST_PORT || 80,
   CLIENT_MONGO_URL: process.env.CLIENT_MONGO_URL || 'mongodb://mongodb:27017',
-  ENVIRONMENT: process.env.ENVIRONMENT || 'local',
+  ENVIRONMENT: process.env.ENVIRONMENT || 'localhost',
   OPTIMIST_MONGO_URL: process.env.OPTIMIST_MONGO_URL || 'mongodb://mongodb:27017',
   IS_CHALLENGER: process.env.IS_CHALLENGER || 'true',
   ETH_NETWORK: process.env.ETH_NETWORK || 'blockchain',
   WHITELISTING: process.env.WHITELISTING,
   UPGRADE_CONTRACTS: process.env.UPGRADE_CONTRACTS,
-  SANCTIONS_CONTRACT:
-    process.env.TEST_SANCTIONS_CONTRACT || '0x40C57923924B5c5c5455c48D93317139ADDaC8fb',
+  SANCTIONS_CONTRACT_ADDRESS: '0x40C57923924B5c5c5455c48D93317139ADDaC8fb',
   MULTISIG: {
     SIGNATURE_THRESHOLD: process.env.MULTISIG_SIGNATURE_THRESHOLD || 2, // number of signatures needed to perform an admin task
     APPROVERS: process.env.MULTISIG_APPROVERS
