@@ -4,7 +4,7 @@
 
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
-NIGHTFALL_BRANCH=927c6d0060c76c65794b3f227b49ae9d2a910cd4
+NIGHTFALL_BRANCH=47526a724f57f9eafd817b1d6825f0dbbb43d1d3
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -264,43 +264,9 @@ lazy-optimist-disable:
 	curl -X POST ${URL}/challenger/enable -H 'Content-Type: application/json' -d '{"enable":false}'
 
 deploy-wallet:
-	if [ "${OVERWRITE_CODE}" = "y" ]; then\
-		cp tmp/wallet/index.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-edge.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-local.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-mainnet.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-testnet.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/bridgeComponentIndex.jsx nightfall_3/wallet/src/components/BridgeComponent/index.jsx; \
-		cp tmp/wallet/sendModal.tsx nightfall_3/wallet/src/components/Modals/sendModal.tsx; \
-		cp tmp/wallet/TokenItemIndex.jsx nightfall_3/wallet/src/components/TokenItem/index.jsx; \
-		cp tmp/wallet/TransactionsIndex.jsx nightfall_3/wallet/src/components/Transactions/index.jsx; \
-		cp tmp/wallet/commitment-storage.js nightfall_3/wallet/src//nightfall-browser/services/commitment-storage.js; \
-		cp tmp/wallet/TokenType.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/walletIndex.jsx nightfall_3/wallet/src/views/wallet/index.jsx; \
-		cp tmp/wallet/local-storage.js nightfall_3/wallet/src/utils/lib/local-storage.js; \
-		cp tmp/config/default.js nightfall_3/config/default.js; \
-		cp tmp/wallet/commitmentsVerification.js nightfall_3/wallet/src/utils/CommitmentsBackup/; \
-	fi
 	cd scripts && RELEASE=${RELEASE} ./deploy-wallet.sh
 
 deploy-wallet-local:
-	if [ "${OVERWRITE_CODE}" = "y" ]; then\
-		cp tmp/wallet/index.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-edge.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-local.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-mainnet.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/supported-tokens-testnet.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/bridgeComponentIndex.jsx nightfall_3/wallet/src/components/BridgeComponent/index.jsx; \
-		cp tmp/wallet/sendModal.tsx nightfall_3/wallet/src/components/Modals/sendModal.tsx; \
-		cp tmp/wallet/TokenItemIndex.jsx nightfall_3/wallet/src/components/TokenItem/index.jsx; \
-		cp tmp/wallet/TransactionsIndex.jsx nightfall_3/wallet/src/components/Transactions/index.jsx; \
-		cp tmp/wallet/commitment-storage.js nightfall_3/wallet/src//nightfall-browser/services/commitment-storage.js; \
-		cp tmp/wallet/TokenType.ts nightfall_3/wallet/src/static/supported-token-lists; \
-		cp tmp/wallet/walletIndex.jsx nightfall_3/wallet/src/views/wallet/index.jsx; \
-		cp tmp/wallet/local-storage.js nightfall_3/wallet/src/utils/lib/local-storage.js; \
-		cp tmp/config/default.js nightfall_3/config/default.js; \
-		cp tmp/wallet/commitmentsVerification.js nightfall_3/wallet/src/utils/CommitmentsBackup/; \
-	fi
 	cd scripts && RELEASE=${RELEASE} ./deploy-wallet-local.sh
 
 # Build all images (client, optimist, proposer, challenger, publisher, liquidity_provider, adversary)
@@ -341,9 +307,6 @@ push-all:
 build-client:
 	@cp docker/client-docker-entrypoint.sh nightfall_3/nightfall-client/docker-entrypoint.sh
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
-	if [ "${OVERWRITE_CODE}" = "y" ]; then\
-		cp tmp/client/finalise-withdrawal.mjs nightfall_3/nightfall-client/src/services/; \
-	fi
 	@make build-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 
 build-optimist:
@@ -354,6 +317,7 @@ build-optimist:
 build-adversary:
 	@cp docker/adversary.Dockerfile nightfall_3/docker
 	@cp docker/optimist-docker-entrypoint.sh nightfall_3/nightfall-optimist/docker-entrypoint.sh
+	perl -i -pe 's#^test$$# #g' ./nightfall_3/.dockerignore
 	@cd nightfall_3 && npm run build-adversary
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-adversary GIT_COMMIT=${GIT_COMMIT}
@@ -361,6 +325,7 @@ build-adversary:
 build-lazy_client:
 	@cp docker/client-docker-entrypoint.sh nightfall_3/nightfall-client/docker-entrypoint.sh
 	@cp docker/lazy_client.Dockerfile nightfall_3/docker
+	perl -i -pe 's#^test$$# #g' ./nightfall_3/.dockerignore
 	@cd nightfall_3 && npm run build-adversary
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}

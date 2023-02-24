@@ -23,16 +23,5 @@ if [ -z "${ETH_PRIVATE_KEY}" ]; then
  done
 fi
 
-npx truffle compile --all
-
-if [ -z "${UPGRADE}" ]; then
-  echo "Deploying contracts: ${ETH_NETWORK}, ${BLOCKCHAIN_URL}, ${ETH_ADDRESS}"
-  npx truffle migrate --to 3 --network=${ETH_NETWORK}
-else
-  echo 'Upgrading contracts'
-  npx truffle migrate -f 4 --network=${ETH_NETWORK} --skip-dry-run
-fi
-
-#sleep 10
 
 npm start

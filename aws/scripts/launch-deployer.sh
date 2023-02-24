@@ -289,7 +289,7 @@ while true; do
       for PROVING_FILE_FOLDERS in * ; do
         if [ -d "${PROVING_FILE_FOLDERS}" ]; then
           aws s3 cp ${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}.zkey ${S3_BUCKET_WALLET}/circuits/${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}.zkey
-          aws s3 cp ${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}_js/${PROVING_FILE_FOLDERS}.wasm ${S3_BUCKET_WALLET}/circuits/${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}.wasm
+          aws s3 cp ${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}_js/${PROVING_FILE_FOLDERS}.wasm ${S3_BUCKET_WALLET}/circuits/${PROVING_FILE_FOLDERS}_js/${PROVING_FILE_FOLDERS}.wasm
           HF_ZKEY=$(cat ${VOLUMES}/proving_files/hash.txt | grep ${PROVING_FILE_FOLDERS}.zkey | awk '{print $1}')
           HF_WASM=$(cat ${VOLUMES}/proving_files/hash.txt | grep ${PROVING_FILE_FOLDERS}.wasm | awk '{print $1}')
           CIRCUIT_HASH=$(cat circuithash.txt   \
@@ -300,7 +300,7 @@ while true; do
           echo -e "\t\t\"zkh\": \"${HF_ZKEY}\"," >> ${VOLUMES}/proving_files/s3_hash.txt
           echo -e "\t\t\"zk\": \"circuits/${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}.zkey\"," >> ${VOLUMES}/proving_files/s3_hash.txt
           echo -e "\t\t\"wasmh\": \"${HF_WASM}\"," >> ${VOLUMES}/proving_files/s3_hash.txt
-          echo -e "\t\t\"wasm\": \"circuits/${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}.wasm\"," >> ${VOLUMES}/proving_files/s3_hash.txt
+          echo -e "\t\t\"wasm\": \"circuits/${PROVING_FILE_FOLDERS}_js/${PROVING_FILE_FOLDERS}.wasm\"," >> ${VOLUMES}/proving_files/s3_hash.txt
           echo -e "\t\t\"hash\": \"${CIRCUIT_HASH:0:12}\"" >> ${VOLUMES}/proving_files/s3_hash.txt
           echo -e "\t}," >> ${VOLUMES}/proving_files/s3_hash.txt
         fi
