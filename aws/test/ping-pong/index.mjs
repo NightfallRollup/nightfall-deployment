@@ -33,7 +33,13 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
   if (await nf3.healthcheck('client')) logger.info('Healthcheck passed');
   else throw new Error('Healthcheck failed');
 
-  const ercAddress = TEST_ERC20_ADDRESS || (await nf3.getContractAddress('ERC20Mock'));
+  let ercAddress;
+  try {
+    ercAddress = await nf3.getContractAddress('ERC20Mock');
+  } catch {
+    console.log('Couldnt retrieve ERC20Mock address!!! Using default');
+    ercAddress = TEST_ERC20_ADDRESS;
+  }
   const stateAddress = await nf3.stateContractAddress;
   const web3Client = new Web3Client();
   web3Client.subscribeTo('logs', eventLogs, { address: stateAddress });

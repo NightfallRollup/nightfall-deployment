@@ -12,6 +12,7 @@ const {
   GAS_PRICE,
   USER_ACCOUNTS,
   DEPLOYER_ETH_NETWORK,
+  TEST_ERC20_ADDRESS,
 } = process.env;
 const { CLIENT_URL = `https://${CLIENT_HOST}` } = process.env;
 
@@ -44,8 +45,14 @@ async function fundAccounts() {
   const erc20Abi = resErc20Abi.data.abi;
 
   // Get ERC20 token address
-  const resErc20Address = await axios.get(`${CLIENT_URL}/contract-address/ERC20Mock`);
-  const erc20Address = resErc20Address.data.address;
+  var erc20Address;
+  try {
+    const resErc20Address = await axios.get(`${CLIENT_URL}/contract-address/ERC20Mock`);
+    erc20Address = resErc20Address.data.address;
+  } catch {
+    console.log('ERC20Mock address cannot be retrieved!!! Using default one');
+    erc20Address = TEST_ERC20_ADDRESS;
+  }
 
   // Get ERC20 Token contract instance
   const erc20Contract = new web3.eth.Contract(erc20Abi, erc20Address);
