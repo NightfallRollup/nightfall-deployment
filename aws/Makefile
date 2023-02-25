@@ -4,7 +4,7 @@
 
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
-NIGHTFALL_BRANCH=47526a724f57f9eafd817b1d6825f0dbbb43d1d3
+NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
 OVERWRITE_CODE=y
 
 ### RELEASES
