@@ -143,7 +143,10 @@ launch-admin:
 	cd scripts && RELEASE=${RELEASE} ./launch-admin.sh
 
 test-db:
-	cd scripts && RELEASE=${RELEASE} COMMAND=${COMMAND} LAST_BLOCK=${LAST_BLOCK} ./test-db.sh
+	cd scripts && RELEASE=${RELEASE} ./test-db.sh
+
+fill-db:
+	cd scripts && RELEASE=${RELEASE} ./fill-db.sh
 
 test-publisher:
 	cd scripts && RELEASE=${RELEASE} ./test-publisher.sh

@@ -1,9 +1,9 @@
 #! /bin/bash
 
-# test db
+# Fill db with random data
 
 #  Usage
-#  AWS_ACCESS_KEY_ID=<xxxx> AWS_SECRET_ACCESS_KEY=<xxxxxxxxxx> RELEASE=<xxxx> test-db.sh
+#  AWS_ACCESS_KEY_ID=<xxxx> AWS_SECRET_ACCESS_KEY=<xxxxxxxxxx> RELEASE=<xxxx> fill-db.sh
 #
 set -e
 
@@ -33,4 +33,4 @@ cd ../test/db && MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD} \
   MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME} \
   N_TRANSACTIONS=${N_TRANSACTIONS} \
   TRANSACTIONS_PER_BLOCK=${TRANSACTIONS_PER_BLOCK}  \
-  node read-workers.mjs;
+  node write-workers.mjs;
