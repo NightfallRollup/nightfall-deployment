@@ -32,4 +32,4 @@ while true; do
   sleep 10
 done
 
-curl https://"${OPTIMIST_HTTP_HOST}"/block/make-now 2> /dev/null 
+curl -X POST https://"${OPTIMIST_HTTP_HOST}"/block/make-now 2> /dev/null 

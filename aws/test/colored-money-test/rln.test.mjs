@@ -51,7 +51,7 @@ async function getLayer2RlnBalance(_nf3User) {
 
 async function makeBlock() {
   logger.debug(`Make block...`);
-  await axios.get(`${environment.optimistApiUrl}/block/make-now`);
+  await axios.post(`${environment.optimistApiUrl}/block/make-now`);
   await web3Client.waitForEvent(eventLogs, ['blockProposed']);
 }
 
