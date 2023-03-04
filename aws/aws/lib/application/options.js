@@ -63,8 +63,8 @@ const gethAppAttr = {
     imageName: 'geth',
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: 4096,
-  cpu: 2048,
+  memoryLimitMiB: process.env.BLOCKCHAIN_MEMLIMIT ? Number(process.env.BLOCKCHAIN_MEMLIMIT): 4096,
+  cpu: process.env.BLOCKCHAIN_VCPU ? Number(process.env.BLOCKCHAIN_VCPU ) : 2048,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
 };
@@ -273,6 +273,8 @@ const optimistAppAttr = {
       OPTIMIST_ADVERSARY_BAD_BLOCK_GENERATION_PERIOD: process.env.OPTIMIST_ADVERSARY_BAD_BLOCK_GENERATION_PERIOD,
       OPTIMIST_ADVERSARY_BAD_BLOCK_SEQUENCE: process.env.OPTIMIST_ADVERSARY_BAD_BLOCK_SEQUENCE,
       OPTIMIST_ADVERSARY_CONTROLLER_ENABLED: process.env.OPTIMIST_ADVERSARY_CONTROLLER_ENABLED,
+      TX_WORKER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
+      TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_COUNT,
     },
     secretVars: [
       {
@@ -293,10 +295,78 @@ const optimistAppAttr = {
     imageTag: process.env.RELEASE,
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  memoryLimitMiB: 2048,
-  cpu: 1024,
+  memoryLimitMiB: process.env.OPTIMIST_MEMLIMIT ? Number(process.env.OPTIMIST_MEMLIMIT): 2048,
+  cpu: process.env.OPTIMIST_VCPU ? Number(process.env.OPTIMIST_VCPU ) : 1024,
   //memoryLimitMiB: 8192,
   //cpu: 4096,
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const optTxWorkerAppAttr = {
+  nInstances : process.env.OPTIMIST_N,
+  // REQUIRED. Application/Task name
+  name: 'opt_txw', 
+  assignPublicIp: false,
+  enable: true,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.OPTIMIST_TX_WORKER_HTTP_PORT),
+        hostPort: Number(process.env.OPTIMIST_TX_WORKER_HTTP_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.OPTIMIST_TX_WORKER_HTTP_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+        },
+        albType: process.env.OPTIMIST_TX_WORKER_HTTP_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.OPTIMIST_AUTOSTART_RETRIES,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      ENVIRONMENT: 'aws',
+      HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
+      LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_TX_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_TX_WORKER_LOG_HTTP_FULL_DATA,
+      MONGO_URL: process.env.MONGO_URL,
+      OPTIMIST_DB: process.env.OPTIMIST_DB,
+      TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_COUNT,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-opt_txw',
+    imageTag: process.env.RELEASE,
+  },
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+  memoryLimitMiB: process.env.OPTIMIST_MEMLIMIT ? Number(process.env.OPTIMIST_MEMLIMIT): 2048,
+  cpu: process.env.OPTIMIST_VCPU ? Number(process.env.OPTIMIST_VCPU ) : 1024,
+  //memoryLimitMiB: 8192,
+  //cpu: 4096,
+  desiredCount: Number(process.env.OPTIMIST_TX_WORKER_N),
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -592,6 +662,7 @@ const clientAppAttr = {
 const appsAttr = [
   gethAppAttr,
   optimistAppAttr,
+  optTxWorkerAppAttr,
   proposerAppAttr,
   publisherAppAttr,
   dashboardAppAttr,

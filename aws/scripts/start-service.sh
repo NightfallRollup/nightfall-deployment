@@ -8,6 +8,7 @@
 
 # Export env variables
 set -o allexport
+
 source ../env/aws.env
 if [ ! -f "../env/${RELEASE}.env" ]; then
    echo "Undefined RELEASE ${RELEASE}"
@@ -36,6 +37,9 @@ if [ -z "${CLUSTER_ARN}" ]; then
   echo "Cluster not found"
   exit 1;
 fi
+if [ -z "${NEW_DESIRED_COUNT}" ]; then
+  NEW_DESIRED_COUNT=1
+fi
 SERVICE_FOUND=
 SERVICES_ARN=$(aws ecs list-services --cluster ${CLUSTER_ARN} | jq '.serviceArns[]' | tr -d '"') 
 for SERVICE_ARN in ${SERVICES_ARN}; do
@@ -47,15 +51,15 @@ for SERVICE_ARN in ${SERVICES_ARN}; do
       DESIRED_COUNT=$(echo "${SERVICE_INFO}" | jq '.services[0].desiredCount' | tr -d '"')
       SERVICE_FOUND=1
       # Service is already Running
-      if [ "${DESIRED_COUNT}" = "1" ]; then
-        echo "Service ${SERVICE_NAME} has ${RUNNING_COUNT} running tasks and ${DESIRED_COUNT} desired running tasks..."
+      if [ "${DESIRED_COUNT}" = "${NEW_DESIRED_COUNT}" ]; then
+        echo "Service ${SERVICE_NAME} has ${RUNNING_COUNT} running tasks and ${NEW_DESIRED_COUNT} desired running tasks..."
       else
         # Start service
-        NEW_STATUS=$(aws ecs update-service --cluster ${CLUSTER_ARN} --service ${SERVICE_ARN} --desired-count 1)
+        NEW_STATUS=$(aws ecs update-service --cluster ${CLUSTER_ARN} --service ${SERVICE_ARN} --desired-count ${NEW_DESIRED_COUNT})
         NEW_RUNNING_COUNT=$(echo ${NEW_STATUS} | jq '.service.runningCount' | tr -d '"')
-        NEW_DESIRED_COUNT=$(echo ${NEW_STATUS} | jq '.service.desiredCount' | tr -d '"')
+        UPDATED_DESIRED_COUNT=$(echo ${NEW_STATUS} | jq '.service.desiredCount' | tr -d '"')
         echo "New services's Running Count - ${SERVICE_NAME}: ${NEW_RUNNING_COUNT}"
-        echo "New services's Desired Count - ${SERVICE_NAME}: ${NEW_DESIRED_COUNT}"
+        echo "New services's Desired Count - ${SERVICE_NAME}: ${UPDATED_DESIRED_COUNT}"
       fi
   fi
 done
