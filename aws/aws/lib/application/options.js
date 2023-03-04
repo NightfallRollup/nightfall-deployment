@@ -320,14 +320,14 @@ const optTxWorkerAppAttr = {
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.OPTIMIST_TX_WORKER_HTTP_PORT),
-        hostPort: Number(process.env.OPTIMIST_TX_WORKER_HTTP_PORT),
+        containerPort: Number(process.env.OPTIMIST_TX_WORKER_PORT),
+        hostPort: Number(process.env.OPTIMIST_TX_WORKER_PORT),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.OPTIMIST_TX_WORKER_HTTP_SERVICE,
+        hostname: process.env.OPTIMIST_TX_WORKER_SERVICE,
         healthcheck: {
           path: '/healthcheck',
         },
-        albType: process.env.OPTIMIST_TX_WORKER_HTTP_SERVICE_ALB,
+        albType: process.env.OPTIMIST_TX_WORKER_SERVICE_ALB,
       },
     ],
     environmentVars: {

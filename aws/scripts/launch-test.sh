@@ -34,8 +34,13 @@ set +o allexport
 
 if [ "${TEST}" = "RLN" ]; then
   TEST_FILE=test/rln/rln.test.mjs
-else
+elif [ "${TEST}" = "PING_PONG" ]; then
   TEST_FILE=test/ping-pong-single/ping-pong.test.mjs
+elif [ "${TEST}" = "OPT_TXW" ]; then
+  TEST_FILE=test/tx-worker.test.mjs
+else
+  echo "No valid test. Exiting...."
+  exit 1
 fi
 
 # Retrieve User1 secrets from AWS

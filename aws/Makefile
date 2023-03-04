@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=ee42a659761478625733272d7f028bcaf4132278
+NIGHTFALL_BRANCH=eae117f2589aade931c0e59229415338c220acab
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -248,6 +248,10 @@ test-ping_pong:
 	mkdir -p nightfall_3/test/ping-pong-single
 	cp test/ping-pong/* nightfall_3/test/ping-pong-single
 	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=PING_PONG ./launch-test.sh
+
+# Launch txw test
+test-opt_txw:
+	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=OPT_TXW ./launch-test.sh
 
 test-rln:
 	mkdir -p nightfall_3/test/rln
