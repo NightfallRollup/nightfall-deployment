@@ -17,7 +17,6 @@ function sample(arr) {
 //  ip addr show docker0
 async function initWorkers() {
   const nTransactions = Number(N_TRANSACTIONS);
-  const TRANSACTIONS_PER_BLOCK = 32;
   if (cluster.isPrimary) {
     const totalCPUs = Math.min(os.cpus().length - 1);
 
@@ -35,7 +34,7 @@ async function initWorkers() {
     perfObserver.observe({ entryTypes: ['measure'], buffer: true });
 
     //const blocks = await db.readRandomBlock(100);
-    const transactions = await db.readRandomTransaction(1);
+    const transactions = await db.readRandomTransaction(nTransactions);
     //const timber = await db.readRandomTree(100);
     performance.mark('start');
 
@@ -43,14 +42,6 @@ async function initWorkers() {
     //  - Check transactions (nullifier and commitment duplicate verification, root, and proof)
     //  - For the transactions that pass this check, we delete duplicate commitments and nullifiers in mempool and save transactions
     for (const transaction of transactions) {
-      /*
-      const [transactionCommitments, transactionNullifiers] = await checkTransaction({
-        transaction,
-        checkDuplicatesInL2: true,
-        checkDuplicatesInMempool: true,
-      });
-      */
-
       // Check Transactions
       checkTransaction({
         transaction,
@@ -60,16 +51,26 @@ async function initWorkers() {
         // If ok, then delete duplicate nullifiers and commitments from mempool and
         //  save transactions
         .then(tx => {
-          // can we do async?
-          deleteDuplicateCommitmentsAndNullifiersFromMemPool(
-            tx[0][0].commitments,
-            tx[1][0].nullifiers,
-          ).then(saveTransaction({ ...transaction }));
+          Promise.all([
+            deleteDuplicateCommitmentsAndNullifiersFromMemPool(
+              tx[0][0].commitments,
+              tx[1][0].nullifiers,
+            ),
+            saveTransaction({ ...transaction }),
+          ]);
         })
         // if transaction did not verify, just raise error
         .catch(err => console.log('ERROR', err));
 
-      //await saveTransaction({ ...transaction });
+      /*
+      const [transactionCommitments, transactionNullifiers] = await checkTransaction({
+        transaction,
+        checkDuplicatesInL2: true,
+        checkDuplicatesInMempool: true,
+      });
+
+      await saveTransaction({ ...transaction });
+      */
     }
     /*
     for (let i = 0; i < 1; i++) {

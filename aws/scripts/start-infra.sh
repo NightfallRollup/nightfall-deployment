@@ -89,7 +89,7 @@ PROPOSER_RUNNING_COUNT=$(echo ${PROPOSER_RUNNING: -1})
 PROPOSER_DESIRED_COUNT=$(echo ${PROPOSER_DESIRED: -1})
 
 if [[  (-z ${PROPOSER_STATUS}) || ("${PROPOSER_DESIRED_COUNT}" != "0") || ("${PROPOSER_RUNNING_COUNT}" != "0") ]]; then
-  echo "Proposer services is running (and shouldnt). Running tasks : ${PROPOSER_RUNNING_COUNT}. Desired tasks: ${PROPOSER_DESIRED_COUNT}"
+  echo "Proposer service is running (and shouldnt). Running tasks : ${PROPOSER_RUNNING_COUNT}. Desired tasks: ${PROPOSER_DESIRED_COUNT}"
   echo "Run make-stop proposer first"
   exit 1
 fi
@@ -108,7 +108,7 @@ CHALLENGER_RUNNING_COUNT=$(echo ${CHALLENGER_RUNNING: -1})
 CHALLENGER_DESIRED_COUNT=$(echo ${CHALLENGER_DESIRED: -1})
 
 if [[  (-z ${CHALLENGER_STATUS}) || ("${CHALLENGER_DESIRED_COUNT}" != "0") || ("${CHALLENGER_RUNNING_COUNT}" != "0") ]]; then
-  echo "Challenger services is running (and shouldnt). Running tasks : ${CHALLENGER_RUNNING_COUNT}. Desired tasks: ${CHALLENGER_DESIRED_COUNT}"
+  echo "Challenger service is running (and shouldnt). Running tasks : ${CHALLENGER_RUNNING_COUNT}. Desired tasks: ${CHALLENGER_DESIRED_COUNT}"
   echo "Run make-stop challenger first"
   exit 1
 fi
@@ -116,6 +116,26 @@ fi
 CHALLENGER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh challenger)
 echo "---- Challenger Status ----"
 echo "New ${CHALLENGER_STATUS}"
+
+
+# Start Optimist TX Workers
+echo "Starting Optimist TX Workers service..."
+OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh opttxw)
+OPTIMIST_TXW_RUNNING=$(echo ${OPTIMIST_TXW_STATUS} | grep Running)
+OPTIMIST_TXW_DESIRED=$(echo ${OPTIMIST_TXW_STATUS} | grep Desired)
+OPTIMIST_TXW_RUNNING_COUNT=$(echo ${OPTIMIST_TXW_RUNNING: -1})
+OPTIMIST_TXW_DESIRED_COUNT=$(echo ${OPTIMIST_TXW_DESIRED: -1})
+
+if [[  (-z ${OPTIMIST_TXW_STATUS}) || ("${OPTIMIST_TXW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_TXW_RUNNING_COUNT}" != "0") ]]; then
+  echo "Optimist TX Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_TXW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_TXW_DESIRED_COUNT}"
+  echo "Run make-stop opttxw first"
+  exit 1
+fi
+
+OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh opttxw)
+echo "---- Optimist TX Workers Status ----"
+echo "New ${OPTIMIST_TXW_STATUS}"
+
 
 # Start publisher
 echo "Starting Publisher service..."
@@ -126,7 +146,7 @@ PUBLISHER_RUNNING_COUNT=$(echo ${PUBLISHER_RUNNING: -1})
 PUBLISHER_DESIRED_COUNT=$(echo ${PUBLISHER_DESIRED: -1})
 
 if [[  (-z ${PUBLISHER_STATUS}) || ("${PUBLISHER_DESIRED_COUNT}" != "0") || ("${PUBLISHER_RUNNING_COUNT}" != "0") ]]; then
-  echo "Publisher services is running (and shouldnt). Running tasks : ${PUBLISHER_RUNNING_COUNT}. Desired tasks: ${PUBLISHER_DESIRED_COUNT}"
+  echo "Publisher service is running (and shouldnt). Running tasks : ${PUBLISHER_RUNNING_COUNT}. Desired tasks: ${PUBLISHER_DESIRED_COUNT}"
   echo "Run make-stop publisher first"
   exit 1
 fi
@@ -146,7 +166,7 @@ if [ "${DASHBOARD_ENABLE}" = "true" ]; then
   DASHBOARD_DESIRED_COUNT=$(echo ${DASHBOARD_DESIRED: -1})
   
   if [[  (-z ${DASHBOARD_STATUS}) || ("${DASHBOARD_DESIRED_COUNT}" != "0") || ("${DASHBOARD_RUNNING_COUNT}" != "0") ]]; then
-    echo "Dashboard services is running (and shouldnt). Running tasks : ${DASHBOARD_RUNNING_COUNT}. Desired tasks: ${DASHBOARD_DESIRED_COUNT}"
+    echo "Dashboard service is running (and shouldnt). Running tasks : ${DASHBOARD_RUNNING_COUNT}. Desired tasks: ${DASHBOARD_DESIRED_COUNT}"
     echo "Run make-stop dashboard first"
     exit 1
   fi
@@ -175,6 +195,18 @@ while true; do
   CHALLENGER_RESPONSE=$(curl https://"${CHALLENGER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
   if [ "${CHALLENGER_RESPONSE}" ]; then
     echo "Connected to ${CHALLENGER_HOST}..."
+	  break
+  fi
+  sleep 10
+done
+
+
+# Check opt txw are alive
+while true; do
+  echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
+  OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+  if [ "${OPTIMIST_TXW_RESPONSE}" ]; then
+    echo "Connected to ${OPTIMIST_TXW_HOST}..."
 	  break
   fi
   sleep 10

@@ -66,6 +66,9 @@ if [ -z "${USER2_MNEMONIC}" ]; then
    exit 1
 fi
 
+MONGO_USERNAME=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/${MONGO_INITDB_ROOT_USERNAME_PARAM}" | jq '.Parameter.Value' | tr -d '"') 
+MONGO_PASSWORD=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/${MONGO_INITDB_ROOT_PASSWORD_PARAM}" --with-decryption | jq '.Parameter.Value' | tr -d '"') 
+
 # if there is a local client deployed, use it. Otherwise, use cloud client
 CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
 if [ -z "${CLIENT}" ]; then
@@ -74,8 +77,6 @@ if [ -z "${CLIENT}" ]; then
     DB_NAME2=nightfall_commitments2
     echo "Deleting dBs ${DB_NAME1} and ${DB_NAME2}..."
 
-    MONGO_USERNAME=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/${MONGO_INITDB_ROOT_USERNAME_PARAM}" | jq '.Parameter.Value' | tr -d '"') 
-    MONGO_PASSWORD=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/${MONGO_INITDB_ROOT_PASSWORD_PARAM}" --with-decryption | jq '.Parameter.Value' | tr -d '"') 
     mongosh --host ${MONGO_URL}:27017 \
      --username ${MONGO_USERNAME} \
      --password ${MONGO_PASSWORD} \
@@ -103,6 +104,9 @@ if [ -z "${CLIENT}" ]; then
          USER2_KEY=${USER2_KEY} \
          USER1_COMPRESSED_ZKP_PUBLIC_KEY=${USER1_COMPRESSED_ZKP_PUBLIC_KEY} \
          USER2_COMPRESSED_ZKP_PUBLIC_KEY=${USER2_COMPRESSED_ZKP_PUBLIC_KEY} \
+         MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME} \
+         MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}  \
+         MONGO_CONNECTION_STRING="${MONGO_CONNECTION_STRING}" \
          RLN_TOKEN_ADDRESS=${RLN_TOKEN_ADDRESS} \
          npx hardhat test --bail --no-compile ${TEST_FILE}
     fi
@@ -110,6 +114,7 @@ if [ -z "${CLIENT}" ]; then
     sleep 4
   done
 else
+  MONGO_CONNECTION_STRING="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_URL}:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
   while true; do
     CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
     if [ "${CLIENT}" ]; then
@@ -126,6 +131,9 @@ else
          USER1_COMPRESSED_ZKP_PUBLIC_KEY=${USER1_COMPRESSED_ZKP_PUBLIC_KEY} \
          USER2_COMPRESSED_ZKP_PUBLIC_KEY=${USER2_COMPRESSED_ZKP_PUBLIC_KEY} \
          RLN_TOKEN_ADDRESS=${RLN_TOKEN_ADDRESS} \
+         MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME} \
+         MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}  \
+         MONGO_CONNECTION_STRING="${MONGO_CONNECTION_STRING}" \
          npx hardhat test --bail --no-compile ${TEST_FILE}
         break
       fi
