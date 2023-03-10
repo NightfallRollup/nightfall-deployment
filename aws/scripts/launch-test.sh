@@ -113,6 +113,7 @@ if [ -z "${CLIENT}" ]; then
          MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}  \
          MONGO_CONNECTION_STRING="${MONGO_CONNECTION_STRING}" \
          RLN_TOKEN_ADDRESS=${RLN_TOKEN_ADDRESS} \
+         N_TRANSACTIONS=${N_TRANSACTIONS} \
          npx hardhat test --bail --no-compile ${TEST_FILE}
     fi
     echo "Connecting to clients..."
@@ -139,6 +140,7 @@ else
          MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME} \
          MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}  \
          MONGO_CONNECTION_STRING="${MONGO_CONNECTION_STRING}" \
+         N_TRANSACTIONS=${N_TRANSACTIONS} \
          npx hardhat test --bail --no-compile ${TEST_FILE}
         break
       fi

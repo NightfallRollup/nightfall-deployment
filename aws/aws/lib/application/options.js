@@ -57,6 +57,7 @@ const gethAppAttr = {
     ],
     environmentVars: {
       GANACHE_CHAIN_ID: process.env.GANACHE_CHAIN_ID,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     command: [],
     repository: process.env.ECR_REPO,
@@ -74,7 +75,7 @@ const proposerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'proposer',
   assignPublicIp: false,
-  enable: true,
+  enable: Number(process.env.PROPOSER_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -153,7 +154,7 @@ const challengerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'challenger',
   assignPublicIp: false,
-  enable: true,
+  enable: Number(process.env.CHALLENGER_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -187,6 +188,7 @@ const challengerAppAttr = {
       GAS_PRICE: process.env.GAS_PRICE,
       GAS: process.env.GAS_PROPOSER,
       ENVIRONMENT: 'aws',
+      OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS: process.env.OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS,
     },
     secretVars: [
       {
@@ -227,7 +229,7 @@ const optimistAppAttr = {
   // REQUIRED. Application/Task name
   name: 'optimist', 
   assignPublicIp: false,
-  enable: true,
+  enable: Number(process.env.OPTIMIST_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -315,7 +317,7 @@ const optTxWorkerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'opt_txw', 
   assignPublicIp: false,
-  enable: true,
+  enable: Number(process.env.OPTIMIST_TX_WORKER_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -382,7 +384,7 @@ const publisherAppAttr = {
   // REQUIRED. Application/Task name
   name: 'publisher',
   assignPublicIp: false,
-  enable: true, 
+  enable: process.env.PUBLISHER_ENABLE === 'true',
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -546,7 +548,7 @@ const circomWorkerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'circomWorker',
   assignPublicIp: false,
-  enable: true,
+  enable: Number(process.env.CLIENT_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -590,7 +592,7 @@ const clientAppAttr = {
   // REQUIRED. Application/Task name
   name: 'client',
   assignPublicIp: process.env.CLIENT_SERVICE_ALB === 'external',
-  enable: process.env.CLIENT_N !== "" && process.env.CLIENT_N !== '0',
+  enable: Number(process.env.CLIENT_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [

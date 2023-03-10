@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=eae117f2589aade931c0e59229415338c220acab
+NIGHTFALL_BRANCH=5df00b3aad4a6d1f197a2832252aa3f709350679
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -251,6 +251,7 @@ test-ping_pong:
 
 # Launch txw test
 test-opt_txw:
+	cp test/workers/tx-worker.test.mjs nightfall_3/test
 	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=OPT_TXW ./launch-test.sh
 
 test-rln:
@@ -331,11 +332,22 @@ build-client:
 
 build-optimist:
 	@cp docker/optimist-docker-entrypoint.sh nightfall_3/nightfall-optimist/docker-entrypoint.sh
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+	   cp tmp/workers/debug.mjs nightfall_3/nightfall-optimist/src/routes/; \
+	   cp tmp/workers/database.mjs nightfall_3/nightfall-optimist/src/services/; \
+	   cp tmp/workers/transaction-submitted.mjs nightfall_3/nightfall-optimist/src/event-handlers/; \
+	fi
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
 
 build-opt_txw:
 	@cp docker/optimist-tx-submitted-docker-entrypoint.sh nightfall_3/nightfall-optimist/docker-tx-submitted-entrypoint.sh
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+	   cp tmp/workers/debug.mjs nightfall_3/nightfall-optimist/src/routes/; \
+	   cp tmp/workers/database.mjs nightfall_3/nightfall-optimist/src/services/; \
+	   cp tmp/workers/transaction-submitted-app.mjs nightfall_3/nightfall-optimist/src/workers; \
+	   cp tmp/workers/transaction-submitted.mjs nightfall_3/nightfall-optimist/src/event-handlers/; \
+	fi
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-opt_txw GIT_COMMIT=${GIT_COMMIT}
 
@@ -343,6 +355,11 @@ build-adversary:
 	@cp docker/adversary.Dockerfile nightfall_3/docker
 	@cp docker/optimist-docker-entrypoint.sh nightfall_3/nightfall-optimist/docker-entrypoint.sh
 	perl -i -pe 's#^test$$# #g' ./nightfall_3/.dockerignore
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+	   cp tmp/workers/debug.mjs nightfall_3/nightfall-optimist/src/routes/; \
+	   cp tmp/workers/database.mjs nightfall_3/nightfall-optimist/src/services/; \
+	   cp tmp/workers/transaction-submitted.mjs nightfall_3/nightfall-optimist/src/event-handlers/; \
+	fi
 	@cd nightfall_3 && npm run build-adversary
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-adversary GIT_COMMIT=${GIT_COMMIT}
@@ -665,7 +682,7 @@ exec-optimist:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh optimist${INSTANCE_INDEX}Container
 
 exec-opt_txw:
-	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh opttxw${INSTANCE_INDEX}Container
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh opt_txw${INSTANCE_INDEX}Container
 
 exec-proposer:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh proposer${INSTANCE_INDEX}Container
@@ -816,6 +833,10 @@ copy-files:
 	cp docker/challenger.Dockerfile nightfall_3/docker
 	cp docker/admin-docker-entrypoint.sh nightfall_3/nightfall-administrator/docker-entrypoint.sh
 	cp docker/proposer-docker-entrypoint.sh nightfall_3/apps/proposer/docker-entrypoint.sh
+	cp tmp/workers/debug.mjs nightfall_3/nightfall-optimist/src/routes/
+	cp tmp/workers/transaction-submitted-app.mjs nightfall_3/nightfall-optimist/src/workers
+	cp tmp/workers/transaction-submitted.mjs nightfall_3/nightfall-optimist/src/event-handlers/
+	cp tmp/workers/database.mjs nightfall_3/nightfall-optimist/src/services/
 
 
 # Clean containers

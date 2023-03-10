@@ -90,6 +90,8 @@ for i in `seq ${SINGLE_OPTIMIST} 1 ${OPTIMIST_N}`; do
      db.runCommand( {aggregate: 1, pipeline: [{\$listChangeStreams: 1}], cursor:{}});\
      db.${TRANSACTIONS_COLLECTION}.createIndex({transactionHash:1});\
      db.${TRANSACTIONS_COLLECTION}.createIndex({transactionHashL1:1});\
+     db.${TRANSACTIONS_COLLECTION}.createIndex({commitments:1});\
+     db.${TRANSACTIONS_COLLECTION}.createIndex({nullifiers:1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockNumberL2:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockHash:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockNumber:-1});\

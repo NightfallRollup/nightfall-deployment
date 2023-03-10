@@ -52,109 +52,118 @@ rm -f ./output.txt
 set -e
 
 # Start Optimist
-echo "Starting Optmist service..."
-OPTIMIST_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optimist)
-OPTIMIST_RUNNING=$(echo ${OPTIMIST_STATUS} | grep Running)
-OPTIMIST_DESIRED=$(echo ${OPTIMIST_STATUS} | grep Desired)
-OPTIMIST_RUNNING_COUNT=$(echo ${OPTIMIST_RUNNING: -1})
-OPTIMIST_DESIRED_COUNT=$(echo ${OPTIMIST_DESIRED: -1})
-
-if [[  (-z ${OPTIMIST_STATUS}) || ("${OPTIMIST_DESIRED_COUNT}" != "0") || ("${OPTIMIST_RUNNING_COUNT}" != "0") ]]; then
-  echo "Optimist service is running (and shouldnt). Running tasks : ${OPTIMIST_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_DESIRED_COUNT}"
-  echo "Run make-stop optimist first"
-  exit 1
-fi
-
-OPTIMIST_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh optimist)
-echo "---- Optimist Status ----"
-echo "New ${OPTIMIST_STATUS}"
-
-# Check optimist/adversary is alive
-while true; do
-  echo "Waiting for connection with ${OPTIMIST_HTTP_HOST}..."
-  OPTIMIST_RESPONSE=$(curl https://"${OPTIMIST_HTTP_HOST}"/contract-address/Shield 2> /dev/null | grep 0x || true)
-  if [ "${OPTIMIST_RESPONSE}" ]; then
-    echo "Connected to ${OPTIMIST_HTTP_HOST}..."
-	  break
+if [ "${OPTIMIST_N}" -gt 0 ]; then
+  echo "Starting Optmist service..."
+  OPTIMIST_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optimist)
+  OPTIMIST_RUNNING=$(echo ${OPTIMIST_STATUS} | grep Running)
+  OPTIMIST_DESIRED=$(echo ${OPTIMIST_STATUS} | grep Desired)
+  OPTIMIST_RUNNING_COUNT=$(echo ${OPTIMIST_RUNNING: -1})
+  OPTIMIST_DESIRED_COUNT=$(echo ${OPTIMIST_DESIRED: -1})
+  
+  if [[  (-z ${OPTIMIST_STATUS}) || ("${OPTIMIST_DESIRED_COUNT}" != "0") || ("${OPTIMIST_RUNNING_COUNT}" != "0") ]]; then
+    echo "Optimist service is running (and shouldnt). Running tasks : ${OPTIMIST_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_DESIRED_COUNT}"
+    echo "Run make-stop optimist first"
+    exit 1
   fi
-  sleep 10
-done
+  
+  OPTIMIST_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh optimist)
+  echo "---- Optimist Status ----"
+  echo "New ${OPTIMIST_STATUS}"
+  
+  # Check optimist/adversary is alive
+  while true; do
+    echo "Waiting for connection with ${OPTIMIST_HTTP_HOST}..."
+    OPTIMIST_RESPONSE=$(curl https://"${OPTIMIST_HTTP_HOST}"/contract-address/Shield 2> /dev/null | grep 0x || true)
+    if [ "${OPTIMIST_RESPONSE}" ]; then
+      echo "Connected to ${OPTIMIST_HTTP_HOST}..."
+	    break
+    fi
+    sleep 10
+  done
+fi
 
 # Start proposer
-echo "Starting Proposer service..."
-PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh proposer)
-PROPOSER_RUNNING=$(echo ${PROPOSER_STATUS} | grep Running)
-PROPOSER_DESIRED=$(echo ${PROPOSER_STATUS} | grep Desired)
-PROPOSER_RUNNING_COUNT=$(echo ${PROPOSER_RUNNING: -1})
-PROPOSER_DESIRED_COUNT=$(echo ${PROPOSER_DESIRED: -1})
-
-if [[  (-z ${PROPOSER_STATUS}) || ("${PROPOSER_DESIRED_COUNT}" != "0") || ("${PROPOSER_RUNNING_COUNT}" != "0") ]]; then
-  echo "Proposer service is running (and shouldnt). Running tasks : ${PROPOSER_RUNNING_COUNT}. Desired tasks: ${PROPOSER_DESIRED_COUNT}"
-  echo "Run make-stop proposer first"
-  exit 1
+if [ "${PROPOSER_N}" -gt 0 ]; then
+  echo "Starting Proposer service..."
+  PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh proposer)
+  PROPOSER_RUNNING=$(echo ${PROPOSER_STATUS} | grep Running)
+  PROPOSER_DESIRED=$(echo ${PROPOSER_STATUS} | grep Desired)
+  PROPOSER_RUNNING_COUNT=$(echo ${PROPOSER_RUNNING: -1})
+  PROPOSER_DESIRED_COUNT=$(echo ${PROPOSER_DESIRED: -1})
+  
+  if [[  (-z ${PROPOSER_STATUS}) || ("${PROPOSER_DESIRED_COUNT}" != "0") || ("${PROPOSER_RUNNING_COUNT}" != "0") ]]; then
+    echo "Proposer service is running (and shouldnt). Running tasks : ${PROPOSER_RUNNING_COUNT}. Desired tasks: ${PROPOSER_DESIRED_COUNT}"
+    echo "Run make-stop proposer first"
+    exit 1
+  fi
+  
+  PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh proposer)
+  echo "---- Proposer Status ----"
+  echo "New ${PROPOSER_STATUS}"
 fi
-
-PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh proposer)
-echo "---- Proposer Status ----"
-echo "New ${PROPOSER_STATUS}"
 
 
 # Start challenger
-echo "Starting Challenger service..."
-CHALLENGER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh challenger)
-CHALLENGER_RUNNING=$(echo ${CHALLENGER_STATUS} | grep Running)
-CHALLENGER_DESIRED=$(echo ${CHALLENGER_STATUS} | grep Desired)
-CHALLENGER_RUNNING_COUNT=$(echo ${CHALLENGER_RUNNING: -1})
-CHALLENGER_DESIRED_COUNT=$(echo ${CHALLENGER_DESIRED: -1})
+if [ "${CHALLENGER_N}" -gt 0 ]; then
+  echo "Starting Challenger service..."
+  CHALLENGER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh challenger)
+  CHALLENGER_RUNNING=$(echo ${CHALLENGER_STATUS} | grep Running)
+  CHALLENGER_DESIRED=$(echo ${CHALLENGER_STATUS} | grep Desired)
+  CHALLENGER_RUNNING_COUNT=$(echo ${CHALLENGER_RUNNING: -1})
+  CHALLENGER_DESIRED_COUNT=$(echo ${CHALLENGER_DESIRED: -1})
+  
+  if [[  (-z ${CHALLENGER_STATUS}) || ("${CHALLENGER_DESIRED_COUNT}" != "0") || ("${CHALLENGER_RUNNING_COUNT}" != "0") ]]; then
+    echo "Challenger service is running (and shouldnt). Running tasks : ${CHALLENGER_RUNNING_COUNT}. Desired tasks: ${CHALLENGER_DESIRED_COUNT}"
+    echo "Run make-stop challenger first"
+    exit 1
+  fi
 
-if [[  (-z ${CHALLENGER_STATUS}) || ("${CHALLENGER_DESIRED_COUNT}" != "0") || ("${CHALLENGER_RUNNING_COUNT}" != "0") ]]; then
-  echo "Challenger service is running (and shouldnt). Running tasks : ${CHALLENGER_RUNNING_COUNT}. Desired tasks: ${CHALLENGER_DESIRED_COUNT}"
-  echo "Run make-stop challenger first"
-  exit 1
+  CHALLENGER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh challenger)
+  echo "---- Challenger Status ----"
+  echo "New ${CHALLENGER_STATUS}"
 fi
 
-CHALLENGER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh challenger)
-echo "---- Challenger Status ----"
-echo "New ${CHALLENGER_STATUS}"
+if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
+  # Start Optimist TX Workers
+  echo "Starting Optimist TX Workers service..."
+  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh opttxw)
+  OPTIMIST_TXW_RUNNING=$(echo ${OPTIMIST_TXW_STATUS} | grep Running)
+  OPTIMIST_TXW_DESIRED=$(echo ${OPTIMIST_TXW_STATUS} | grep Desired)
+  OPTIMIST_TXW_RUNNING_COUNT=$(echo ${OPTIMIST_TXW_RUNNING: -1})
+  OPTIMIST_TXW_DESIRED_COUNT=$(echo ${OPTIMIST_TXW_DESIRED: -1})
+  
+  if [[  (-z ${OPTIMIST_TXW_STATUS}) || ("${OPTIMIST_TXW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_TXW_RUNNING_COUNT}" != "0") ]]; then
+    echo "Optimist TX Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_TXW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_TXW_DESIRED_COUNT}"
+    echo "Run make-stop opttxw first"
+    exit 1
+  fi
 
-
-# Start Optimist TX Workers
-echo "Starting Optimist TX Workers service..."
-OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh opttxw)
-OPTIMIST_TXW_RUNNING=$(echo ${OPTIMIST_TXW_STATUS} | grep Running)
-OPTIMIST_TXW_DESIRED=$(echo ${OPTIMIST_TXW_STATUS} | grep Desired)
-OPTIMIST_TXW_RUNNING_COUNT=$(echo ${OPTIMIST_TXW_RUNNING: -1})
-OPTIMIST_TXW_DESIRED_COUNT=$(echo ${OPTIMIST_TXW_DESIRED: -1})
-
-if [[  (-z ${OPTIMIST_TXW_STATUS}) || ("${OPTIMIST_TXW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_TXW_RUNNING_COUNT}" != "0") ]]; then
-  echo "Optimist TX Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_TXW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_TXW_DESIRED_COUNT}"
-  echo "Run make-stop opttxw first"
-  exit 1
+  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh opttxw)
+  echo "---- Optimist TX Workers Status ----"
+  echo "New ${OPTIMIST_TXW_STATUS}"
 fi
-
-OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh opttxw)
-echo "---- Optimist TX Workers Status ----"
-echo "New ${OPTIMIST_TXW_STATUS}"
 
 
 # Start publisher
-echo "Starting Publisher service..."
-PUBLISHER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh publisher)
-PUBLISHER_RUNNING=$(echo ${PUBLISHER_STATUS} | grep Running)
-PUBLISHER_DESIRED=$(echo ${PUBLISHER_STATUS} | grep Desired)
-PUBLISHER_RUNNING_COUNT=$(echo ${PUBLISHER_RUNNING: -1})
-PUBLISHER_DESIRED_COUNT=$(echo ${PUBLISHER_DESIRED: -1})
+if [ "${PUBLISHER_ENABLE}" = "true" ]; then
+  echo "Starting Publisher service..."
+  PUBLISHER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh publisher)
+  PUBLISHER_RUNNING=$(echo ${PUBLISHER_STATUS} | grep Running)
+  PUBLISHER_DESIRED=$(echo ${PUBLISHER_STATUS} | grep Desired)
+  PUBLISHER_RUNNING_COUNT=$(echo ${PUBLISHER_RUNNING: -1})
+  PUBLISHER_DESIRED_COUNT=$(echo ${PUBLISHER_DESIRED: -1})
+  
+  if [[  (-z ${PUBLISHER_STATUS}) || ("${PUBLISHER_DESIRED_COUNT}" != "0") || ("${PUBLISHER_RUNNING_COUNT}" != "0") ]]; then
+    echo "Publisher service is running (and shouldnt). Running tasks : ${PUBLISHER_RUNNING_COUNT}. Desired tasks: ${PUBLISHER_DESIRED_COUNT}"
+    echo "Run make-stop publisher first"
+    exit 1
+  fi
 
-if [[  (-z ${PUBLISHER_STATUS}) || ("${PUBLISHER_DESIRED_COUNT}" != "0") || ("${PUBLISHER_RUNNING_COUNT}" != "0") ]]; then
-  echo "Publisher service is running (and shouldnt). Running tasks : ${PUBLISHER_RUNNING_COUNT}. Desired tasks: ${PUBLISHER_DESIRED_COUNT}"
-  echo "Run make-stop publisher first"
-  exit 1
+  PUBLISHER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh publisher)
+  echo "---- Publisher Status ----"
+  echo "${PUBLISHER_STATUS}"
 fi
-
-PUBLISHER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh publisher)
-echo "---- Publisher Status ----"
-echo "${PUBLISHER_STATUS}"
-
+  
 
 if [ "${DASHBOARD_ENABLE}" = "true" ]; then
   # Start dashboard
@@ -178,51 +187,59 @@ fi
   
 
 # Check proposer is alive
-## ADD PROPOSER HEADER
-while true; do
-  echo "Waiting for connection with ${PROPOSER_HOST}..."
-  PROPOSER_RESPONSE=$(curl https://"${PROPOSER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-  if [ "${PROPOSER_RESPONSE}" ]; then
-    echo "Connected to ${PROPOSER_HOST}..."
-	  break
-  fi
-  sleep 10
-done
+if [ "${PROPOSER_N}" -gt 0 ]; then
+  ## ADD PROPOSER HEADER
+  while true; do
+    echo "Waiting for connection with ${PROPOSER_HOST}..."
+    PROPOSER_RESPONSE=$(curl https://"${PROPOSER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    if [ "${PROPOSER_RESPONSE}" ]; then
+      echo "Connected to ${PROPOSER_HOST}..."
+	    break
+    fi
+    sleep 10
+  done
+fi
 
 # Check challenger is alive
-while true; do
-  echo "Waiting for connection with ${CHALLENGER_HOST}..."
-  CHALLENGER_RESPONSE=$(curl https://"${CHALLENGER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-  if [ "${CHALLENGER_RESPONSE}" ]; then
-    echo "Connected to ${CHALLENGER_HOST}..."
-	  break
-  fi
-  sleep 10
-done
+if [ "${CHALLENGER_N}" -gt 0 ]; then
+  while true; do
+    echo "Waiting for connection with ${CHALLENGER_HOST}..."
+    CHALLENGER_RESPONSE=$(curl https://"${CHALLENGER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    if [ "${CHALLENGER_RESPONSE}" ]; then
+      echo "Connected to ${CHALLENGER_HOST}..."
+	    break
+    fi
+    sleep 10
+  done
+fi
 
 
 # Check opt txw are alive
-while true; do
-  echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
-  OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-  if [ "${OPTIMIST_TXW_RESPONSE}" ]; then
-    echo "Connected to ${OPTIMIST_TXW_HOST}..."
-	  break
-  fi
-  sleep 10
-done
+if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
+  while true; do
+    echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
+    OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    if [ "${OPTIMIST_TXW_RESPONSE}" ]; then
+      echo "Connected to ${OPTIMIST_TXW_HOST}..."
+	    break
+    fi
+    sleep 10
+  done
+fi
 
 
 # Check publisher is alive
-while true; do
-  echo "Waiting for connection with ${PUBLISHER_HOST}..."
-  PUBLISHER_RESPONSE=$(curl https://"${PUBLISHER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-  if [ "${PUBLISHER_RESPONSE}" ]; then
-    echo "Connected to ${PUBLISHER_HOST}..."
-	  break
-  fi
-  sleep 10
-done
+if [ "${PUBLISHER_ENABLE}" = "true" ]; then
+  while true; do
+    echo "Waiting for connection with ${PUBLISHER_HOST}..."
+    PUBLISHER_RESPONSE=$(curl https://"${PUBLISHER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    if [ "${PUBLISHER_RESPONSE}" ]; then
+      echo "Connected to ${PUBLISHER_HOST}..."
+	    break
+    fi
+    sleep 10
+  done
+fi
 
 if [ "${DASHBOARD_ENABLE}" = "true" ]; then
   # Check dashboard is alive
