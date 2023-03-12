@@ -22,9 +22,13 @@ repoList=("geth" \
    "nightfall-dashboard" \
    "nightfall-challenger" \
    "nightfall-client" \
+   "nightfall-client_txw" \
+   "nightfall-client_bpw" \
    "nightfall-deployer" \
    "nightfall-optimist" \
    "nightfall-opt_txw" \
+   "nightfall-opt_bpw" \
+   "nightfall-opt_baw" \
    "nightfall-proposer" \
    "nightfall-publisher" \
    "nightfall-worker" \

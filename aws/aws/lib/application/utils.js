@@ -58,7 +58,20 @@ function findPriority(prioritySet, key) {
   return nextUnused;
 }
 
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+function updateEcsCpus(desiredCpus) {
+  let vcpus = 1024;
+  if (desiredCpus === 1) { vcpus = 1024; }
+  else if (desiredCpus <= 3) { vcpus = 1024 * 2; }
+  else if (desiredCpus <= 4) { vcpus = 1024 * 4; }
+  else if (desiredCpus <= 8) { vcpus = 1024 * 8; }
+  else { vcpus = 1024 * 16; }
+
+  return vcpus;
+}
+
 module.exports = {
   updateEnvVars,
   findPriority,
+  updateEcsCpus,
 };

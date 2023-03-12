@@ -23,13 +23,13 @@ set +o allexport
 
 # Check optimist is alive
 while true; do
-  echo "Waiting for connection with ${OPTIMIST_HTTP_HOST}..."
-  OPTIMIST_RESPONSE=$(curl https://"${OPTIMIST_HTTP_HOST}"/contract-address/Shield 2> /dev/null | grep 0x || true)
+  echo "Waiting for connection with ${OPTIMIST_OPTIMIST_BA_WORKER_HOST}..."
+  OPTIMIST_RESPONSE=$(curl https://"${OPTIMIST_OPTIMIST_BA_WORKER_HOST}"/contract-address/Shield 2> /dev/null | grep 0x || true)
   if [ "${OPTIMIST_RESPONSE}" ]; then
-    echo "Connected to ${OPTIMIST_HTTP_HOST}..."
+    echo "Connected to ${OPTIMIST_OPTIMIST_BA_WORKER_HOST}..."
 	  break
   fi
   sleep 10
 done
 
-curl -X POST https://"${OPTIMIST_HTTP_HOST}"/block/make-now 2> /dev/null 
+curl -X POST https://"${OPTIMIST_BA_WORKER_HOST}"/block/make-now 2> /dev/null 

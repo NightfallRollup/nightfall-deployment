@@ -304,5 +304,29 @@ else
   else
     echo "Connected to ${CHALLENGER_HOST}....... KO"
   fi
+
+  # Check optimist txw is alive
+  OPTIMIST_TX_WORKER_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+  if [ "${OPTIMIST_TX_WORKER_RESPONSE}" ]; then
+    echo "Connected to ${OPTIMIST_TX_WORKER_HOST}..... OK"
+  else
+    echo "Connected to ${OPTIMIST_TX_WORKER_HOST}..... KO"
+  fi
+
+  # Check optimist bpw is alive
+  OPTIMIST_BP_WORKER_RESPONSE=$(curl https://"${OPTIMIST_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+  if [ "${OPTIMIST_BP_WORKER_RESPONSE}" ]; then
+    echo "Connected to ${OPTIMIST_BP_WORKER_HOST}..... OK"
+  else
+    echo "Connected to ${OPTIMIST_BP_WORKER_HOST}..... KO"
+  fi
+
+  # Check optimist baw is alive
+  OPTIMIST_BA_WORKER_RESPONSE=$(curl https://"${OPTIMIST_BA_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+  if [ "${OPTIMIST_BA_WORKER_RESPONSE}" ]; then
+    echo "Connected to ${OPTIMIST_BA_WORKER_HOST}..... OK"
+  else
+    echo "Connected to ${OPTIMIST_BA_WORKER_HOST}..... KO"
+  fi
 fi
 

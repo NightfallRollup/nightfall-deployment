@@ -64,8 +64,7 @@ const gethAppAttr = {
     imageName: 'geth',
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: process.env.BLOCKCHAIN_MEMLIMIT ? Number(process.env.BLOCKCHAIN_MEMLIMIT): 4096,
-  cpu: process.env.BLOCKCHAIN_VCPU ? Number(process.env.BLOCKCHAIN_VCPU ) : 2048,
+  cpu: process.env.BLOCKCHAIN_CPU_COUNT ? Number(process.env.BLOCKCHAIN_CPU_COUNT ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
 };
@@ -138,8 +137,7 @@ const proposerAppAttr = {
     imageName: 'nightfall-proposer',
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: 512,
-  cpu: 256,
+  cpu: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {
     downtime: {
@@ -213,8 +211,7 @@ const challengerAppAttr = {
     imageName: 'nightfall-challenger',
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: 512,
-  cpu: 256,
+  cpu: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {
     downtime: {
@@ -258,6 +255,7 @@ const optimistAppAttr = {
       WEBSOCKET_PORT: process.env.OPTIMIST_WS_PORT,
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
       MAX_BLOCK_SIZE: process.env.MAX_BLOCK_SIZE,
       HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
@@ -275,8 +273,8 @@ const optimistAppAttr = {
       OPTIMIST_ADVERSARY_BAD_BLOCK_GENERATION_PERIOD: process.env.OPTIMIST_ADVERSARY_BAD_BLOCK_GENERATION_PERIOD,
       OPTIMIST_ADVERSARY_BAD_BLOCK_SEQUENCE: process.env.OPTIMIST_ADVERSARY_BAD_BLOCK_SEQUENCE,
       OPTIMIST_ADVERSARY_CONTROLLER_ENABLED: process.env.OPTIMIST_ADVERSARY_CONTROLLER_ENABLED,
-      TX_WORKER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
-      TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_COUNT,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      OPTIMIST_TX_WORKER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
     },
     secretVars: [
       {
@@ -296,12 +294,7 @@ const optimistAppAttr = {
     imageName: ['nightfall-optimist', 'nightfall-adversary'],
     imageTag: process.env.RELEASE,
   },
-  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  memoryLimitMiB: process.env.OPTIMIST_MEMLIMIT ? Number(process.env.OPTIMIST_MEMLIMIT): 2048,
-  cpu: process.env.OPTIMIST_VCPU ? Number(process.env.OPTIMIST_VCPU ) : 1024,
-  //memoryLimitMiB: 8192,
-  //cpu: 4096,
-  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  cpu: 1,
   schedule: {},
   efsVolumes: [
     {
@@ -344,7 +337,8 @@ const optTxWorkerAppAttr = {
       LOG_HTTP_FULL_DATA: process.env.OPTIMIST_TX_WORKER_LOG_HTTP_FULL_DATA,
       MONGO_URL: process.env.MONGO_URL,
       OPTIMIST_DB: process.env.OPTIMIST_DB,
-      TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_COUNT,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      OPTIMIST_TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_COUNT,
     },
     secretVars: [
       {
@@ -364,11 +358,162 @@ const optTxWorkerAppAttr = {
     imageTag: process.env.RELEASE,
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  memoryLimitMiB: process.env.OPTIMIST_MEMLIMIT ? Number(process.env.OPTIMIST_MEMLIMIT): 2048,
-  cpu: process.env.OPTIMIST_VCPU ? Number(process.env.OPTIMIST_VCPU ) : 1024,
+  cpu: process.env.OPTIMIST_TX_WORKER_CPU_COUNT ? Number(process.env.OPTIMIST_TX_WORKER_CPU_COUNT ) : 1,
   //memoryLimitMiB: 8192,
   //cpu: 4096,
   desiredCount: Number(process.env.OPTIMIST_TX_WORKER_N),
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const optBpWorkerAppAttr = {
+  nInstances : process.env.OPTIMIST_N,
+  // REQUIRED. Application/Task name
+  name: 'opt_bpw', 
+  assignPublicIp: false,
+  enable: Number(process.env.OPTIMIST_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.OPTIMIST_BP_WORKER_PORT),
+        hostPort: Number(process.env.OPTIMIST_BP_WORKER_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.OPTIMIST_BP_WORKER_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+        },
+        albType: process.env.OPTIMIST_BP_WORKER_SERVICE_ALB,
+      },
+      {
+        containerPort: Number(process.env.OPTIMIST_BP_WORKER_WS_PORT),
+        hostPort: Number(process.env.OPTIMIST_BP_WORKER_WS_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.OPTIMIST_BP_WORKER_WS_SERVICE,
+        healthcheck: {
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.OPTIMIST_BP_WORKER_WS_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.OPTIMIST_AUTOSTART_RETRIES,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      ENVIRONMENT: 'aws',
+      HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
+      LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_BP_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_BP_WORKER_LOG_HTTP_FULL_DATA,
+      MONGO_URL: process.env.MONGO_URL,
+      OPTIMIST_DB: process.env.OPTIMIST_DB,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-opt_bpw',
+    imageTag: process.env.RELEASE,
+  },
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+  cpu: 1,
+  //memoryLimitMiB: 8192,
+  //cpu: 4096,
+  desiredCount: 1,
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const optBaWorkerAppAttr = {
+  nInstances : process.env.OPTIMIST_N,
+  // REQUIRED. Application/Task name
+  name: 'opt_baw', 
+  assignPublicIp: false,
+  enable: Number(process.env.OPTIMIST_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.OPTIMIST_BA_WORKER_PORT),
+        hostPort: Number(process.env.OPTIMIST_BA_WORKER_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.OPTIMIST_BA_WORKER_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+        },
+        albType: process.env.OPTIMIST_BA_WORKER_SERVICE_ALB,
+      },
+      {
+        containerPort: Number(process.env.OPTIMIST_BA_WORKER_WS_PORT),
+        hostPort: Number(process.env.OPTIMIST_BA_WORKER_WS_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.OPTIMIST_BA_WORKER_WS_SERVICE,
+        healthcheck: {
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.OPTIMIST_BA_WORKER_WS_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.OPTIMIST_AUTOSTART_RETRIES,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      ENVIRONMENT: 'aws',
+      HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
+      LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_BA_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_BA_WORKER_LOG_HTTP_FULL_DATA,
+      MONGO_URL: process.env.MONGO_URL,
+      OPTIMIST_DB: process.env.OPTIMIST_DB,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-opt_baw',
+    imageTag: process.env.RELEASE,
+  },
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+  cpu: 1,
+  desiredCount: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -434,8 +579,7 @@ const publisherAppAttr = {
     imageName: 'nightfall-publisher',
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: 4096,
-  cpu: 1024,
+  cpu: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
 };
@@ -537,8 +681,7 @@ const dashboardAppAttr = {
     imageName: 'nightfall-dashboard',
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: 512,
-  cpu: 256,
+  cpu: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
 };
@@ -574,8 +717,9 @@ const circomWorkerAppAttr = {
     imageName: 'nightfall-worker',
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: 2048,
-  cpu: 1024,
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+  cpu: process.env.CIRCOM_WORKER_CPU_COUNT ? Number(process.env.CIRCOM_WORKER_CPU_COUNT ) : 1024,
+  desiredCount: Number(process.env.CIRCOM_WORKER_N),
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -648,8 +792,158 @@ const clientAppAttr = {
     imageName: ['nightfall-client', 'nightfall-lazy_client'],
     imageTag: process.env.RELEASE,
   },
-  memoryLimitMiB: 2048,
-  cpu: 1024,
+  cpu: 1,
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const clientTxWorkerAppAttr = {
+  nInstances: process.env.CLIENT_N,
+  // REQUIRED. Application/Task name
+  name: 'client_txw',
+  assignPublicIp: process.env.CLIENT_TX_WORKER_SERVICE_ALB === 'external',
+  enable: Number(process.env.CLIENT_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.CLIENT_TX_WORKER_PORT),
+        hostPort: Number(process.env.CLIENT_TX_WORKER_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.CLIENT_TX_WORKER_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+          unhealthyThresholdCount: 10,
+          healthyThresholdCount: 2,
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.CLIENT_TX_WORKER_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
+      GAS: process.env.GAS_CLIENT,
+      LOG_LEVEL: process.env.CLIENT_DEBUG,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      MONGO_URL: process.env.MONGO_URL,
+      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      GAS_PRICE: process.env.GAS_PRICE,
+      STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
+      ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
+      DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
+      PROTOCOL: process.env.CLIENT_PROTOCOL,
+      COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      ENVIRONMENT: 'aws',
+      ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      CLIENT_TX_WORKER_COUNT: process.env.CLIENT_TX_WORKER_COUNT,
+      CLIENT_URL: `https://${process.env.CLIENT_HOST}`,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-client_txw',
+    imageTag: process.env.RELEASE,
+  },
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+  cpu: process.env.CLIENT_TX_WORKER_CPU_COUNT ? Number(process.env.CLIENT_TX_WORKER_CPU_COUNT ) : 1,
+  desiredCount: Number(process.env.CLIENT_TX_WORKER_N),
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const clientBpWorkerAppAttr = {
+  nInstances: process.env.CLIENT_N,
+  // REQUIRED. Application/Task name
+  name: 'client_bpw',
+  assignPublicIp: process.env.CLIENT_BP_WORKER_SERVICE_ALB === 'external',
+  enable: Number(process.env.CLIENT_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.CLIENT_BP_WORKER_PORT),
+        hostPort: Number(process.env.CLIENT_BP_WORKER_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.CLIENT_BP_WORKER_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+          unhealthyThresholdCount: 10,
+          healthyThresholdCount: 2,
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.CLIENT_BP_WORKER_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
+      GAS: process.env.GAS_CLIENT,
+      LOG_LEVEL: process.env.CLIENT_DEBUG,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      MONGO_URL: process.env.MONGO_URL,
+      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      GAS_PRICE: process.env.GAS_PRICE,
+      STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
+      ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
+      DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
+      PROTOCOL: process.env.CLIENT_PROTOCOL,
+      COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      ENVIRONMENT: 'aws',
+      ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageNameIndex: process.env.CLIENT_IS_ADVERSARY,
+    imageName: 'nightfall-client_bpw',
+    imageTag: process.env.RELEASE,
+  },
+  cpu: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -665,12 +959,16 @@ const appsAttr = [
   gethAppAttr,
   optimistAppAttr,
   optTxWorkerAppAttr,
+  optBpWorkerAppAttr,
+  optBaWorkerAppAttr,
   proposerAppAttr,
   publisherAppAttr,
   dashboardAppAttr,
   challengerAppAttr,
   circomWorkerAppAttr,
   clientAppAttr,
+  clientTxWorkerAppAttr,
+  clientBpWorkerAppAttr,
 ];
 
 const edgeAttr = {

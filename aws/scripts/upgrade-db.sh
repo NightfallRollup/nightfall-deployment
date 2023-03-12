@@ -25,9 +25,19 @@ fi
 source ${SECRETS_ENV}
 set +o allexport
 
+CURRENT_INSTANCE=$(aws docdb describe-db-instances \
+  --db-instance-identifier ${MONGO_ID} \
+  --region ${REGION} \
+  | jq ".DBInstances[].DBInstanceClass" | tr -d '\"')
+
 if [ -z "${INSTANCE_TYPE}" ]; then
- echo "INSTANCE_TYPE not defined... Exiting"
- exit 1
+ echo "Current instance type: ${CURRENT_INSTANCE}"
+ echo "Available instance types:"
+ aws docdb describe-orderable-db-instance-options \
+    --engine docdb \
+    --query 'OrderableDBInstanceOptions[*].DBInstanceClass' \
+    --region ${REGION}
+  exit
 fi
 
 NEW_INSTANCE=$(aws docdb modify-db-instance \
