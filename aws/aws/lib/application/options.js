@@ -98,7 +98,8 @@ const proposerAppAttr = {
       OPTIMIST_WS_URL: `wss://${process.env.OPTIMIST_HOST}`,
       PROPOSER_PORT: process.env.PROPOSER_PORT,
       PROPOSER_HOST: process.env.PROPOSER_HOST,
-      PROPOSER_URL: `https://${process.env.PROPOSER_HOST}`,
+      //PROPOSER_URL: `https://${process.env.PROPOSER_HOST}`,
+      PROPOSER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       LOG_LEVEL: process.env.PROPOSER_LOG_LEVEL,
@@ -113,6 +114,8 @@ const proposerAppAttr = {
       TIMER_CHANGE_PROPOSER_SECOND: process.env.PROPOSER_TIMER_CHANGE_PROPOSER_SECOND,
       MAX_ROTATE_TIMES: process.env.PROPOSER_MAX_ROTATE_TIMES,
       GAS_ESTIMATE_ENDPOINT: process.env.GAS_ESTIMATE_ENDPOINT,
+      OPTIMIST_BA_WORKER_WS_HOST: process.env.OPTIMIST_BA_WORKER_WS_HOST,
+      OPTIMIST_BA_WORKER_HOST: process.env.OPTIMIST_BA_WORKER_HOST,
     },
     secretVars: [
       {
@@ -187,6 +190,7 @@ const challengerAppAttr = {
       GAS: process.env.GAS_PROPOSER,
       ENVIRONMENT: 'aws',
       OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS: process.env.OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS,
+      OPTIMIST_BP_WORKER_WS_SERVICE: process.env.OPTIMIST_BP_WORKER_WS_SERVICE,
     },
     secretVars: [
       {
@@ -275,6 +279,8 @@ const optimistAppAttr = {
       OPTIMIST_ADVERSARY_CONTROLLER_ENABLED: process.env.OPTIMIST_ADVERSARY_CONTROLLER_ENABLED,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       OPTIMIST_TX_WORKER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
+      OPTIMIST_BA_WORKER_URL: `https://${process.env.OPTIMIST_BA_WORKER_HOST}`,
+      OPTIMIST_BP_WORKER_URL: `https://${process.env.OPTIMIST_BP_WORKER_HOST}`,
     },
     secretVars: [
       {
@@ -333,12 +339,13 @@ const optTxWorkerAppAttr = {
       ENVIRONMENT: 'aws',
       HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_TX_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_TX_WORKER_LOG_HTTP_FULL_DATA,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_LOG_HTTP_FULL_DATA,
       MONGO_URL: process.env.MONGO_URL,
       OPTIMIST_DB: process.env.OPTIMIST_DB,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       OPTIMIST_TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_COUNT,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     secretVars: [
       {
@@ -411,11 +418,15 @@ const optBpWorkerAppAttr = {
       ENVIRONMENT: 'aws',
       HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_BP_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_BP_WORKER_LOG_HTTP_FULL_DATA,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_LOG_HTTP_FULL_DATA,
       MONGO_URL: process.env.MONGO_URL,
       OPTIMIST_DB: process.env.OPTIMIST_DB,
+      OPTIMIST_TX_WORKER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
+      OPTIMIST_BA_WORKER_URL: `https://${process.env.OPTIMIST_BA_WORKER_HOST}`,
+      IS_CHALLENGER: process.env.OPTIMIST_IS_CHALLENGER,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     secretVars: [
       {
@@ -488,11 +499,13 @@ const optBaWorkerAppAttr = {
       ENVIRONMENT: 'aws',
       HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_BA_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_BA_WORKER_LOG_HTTP_FULL_DATA,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.OPTIMIST_LOG_HTTP_FULL_DATA,
       MONGO_URL: process.env.MONGO_URL,
       OPTIMIST_DB: process.env.OPTIMIST_DB,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      PROPOSER_MAX_BLOCK_PERIOD_MILIS: process.env.PROPOSER_MAX_BLOCK_PERIOD_MILIS,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     secretVars: [
       {
@@ -757,7 +770,7 @@ const clientAppAttr = {
     environmentVars: {
       AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.CLIENT_DEBUG,
+      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
@@ -773,6 +786,7 @@ const clientAppAttr = {
       COMMITMENTS_DB: process.env.COMMITMENTS_DB,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     secretVars: [
       {
@@ -830,7 +844,7 @@ const clientTxWorkerAppAttr = {
     environmentVars: {
       AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.CLIENT_DEBUG,
+      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
@@ -849,6 +863,7 @@ const clientTxWorkerAppAttr = {
       CLIENT_TX_WORKER_COUNT: process.env.CLIENT_TX_WORKER_COUNT,
       CLIENT_URL: `https://${process.env.CLIENT_HOST}`,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     secretVars: [
       {
@@ -907,7 +922,7 @@ const clientBpWorkerAppAttr = {
     environmentVars: {
       AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.CLIENT_DEBUG,
+      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
@@ -924,6 +939,7 @@ const clientBpWorkerAppAttr = {
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     secretVars: [
       {
@@ -939,7 +955,6 @@ const clientBpWorkerAppAttr = {
     ],
     command: [],
     repository: process.env.ECR_REPO,
-    imageNameIndex: process.env.CLIENT_IS_ADVERSARY,
     imageName: 'nightfall-client_bpw',
     imageTag: process.env.RELEASE,
   },

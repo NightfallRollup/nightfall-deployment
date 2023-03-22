@@ -38,6 +38,8 @@ elif [ "${TEST}" = "PING_PONG" ]; then
   TEST_FILE=test/ping-pong-single/ping-pong.test.mjs
 elif [ "${TEST}" = "OPT_TXW" ]; then
   TEST_FILE=test/tx-worker.test.mjs
+elif [ "${TEST}" = "LOAD" ]; then
+  TEST_FILE=test/load.test.mjs
 else
   echo "No valid test. Exiting...."
   exit 1
@@ -94,15 +96,30 @@ if [ -z "${CLIENT}" ]; then
 	  RELEASE=${RELEASE} ./restart-task.sh client
 	  RELEASE=${RELEASE} ./stop-service.sh client
 	  RELEASE=${RELEASE} ./start-service.sh client
+
+	  RELEASE=${RELEASE} ./restart-task.sh client_txw
+	  RELEASE=${RELEASE} ./stop-service.sh clienttxw
+	  RELEASE=${RELEASE} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER} ./start-service.sh clienttxw
+
+	  RELEASE=${RELEASE} ./restart-task.sh client_bpw
+	  RELEASE=${RELEASE} ./stop-service.sh clientbpw
+	  RELEASE=${RELEASE} ./start-service.sh clientbpw
   fi
   while true; do
     CLIENT1_CHECK=$(curl https://"${CLIENT_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
     CLIENT2_CHECK=$(curl https://"${CLIENT_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    CLIENT1_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    CLIENT2_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    CLIENT1_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    CLIENT2_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
     WORKER1_CHECK=$(curl https://"${CIRCOM_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
     WORKER2_CHECK=$(curl https://"${CIRCOM_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-    if [[ ("${CLIENT1_CHECK}") && ("${CLIENT2_CHECK}") && ("${WORKER1_CHECK}") && ("${WORKER2_CHECK}") ]]; then
+    MONGO_CONNECTION_STRING="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_URL}:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
+    #if [[ ("${CLIENT1_CHECK}") && ("${CLIENT2_CHECK}") && ("${WORKER1_CHECK}") && ("${WORKER2_CHECK}") ]]; then
+    if [[ ("${CLIENT1_CHECK}") && ("${WORKER1_CHECK}") && ("${CLIENT1_TXW_CHECK}") && (${CLIENT1_BPW_CHECK}) ]]; then
         cd ../nightfall_3 && ENVIRONMENT=aws \
          LAUNCH_LOCAL='' \
+         CLIENT2_CHECK=${CLIENT2_CHECK} \
          USER1_MNEMONIC=${USER1_MNEMONIC} \
          USER1_KEY=${USER1_KEY} \
          USER2_MNEMONIC=${USER2_MNEMONIC} \
@@ -113,8 +130,8 @@ if [ -z "${CLIENT}" ]; then
          MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}  \
          MONGO_CONNECTION_STRING="${MONGO_CONNECTION_STRING}" \
          RLN_TOKEN_ADDRESS=${RLN_TOKEN_ADDRESS} \
-         N_TRANSACTIONS=${N_TRANSACTIONS} \
          npx hardhat test --bail --no-compile ${TEST_FILE}
+        break
     fi
     echo "Connecting to clients..."
     sleep 4
@@ -123,12 +140,17 @@ else
   MONGO_CONNECTION_STRING="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_URL}:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
   while true; do
     CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+    CLIENT_TX_WORKER=$(docker inspect client-txw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+    CLIENT_BP_WORKER=$(docker inspect client-bpw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
     if [ "${CLIENT}" ]; then
       HCHECK=$(curl "http://${CLIENT}:80/healthcheck" 2> /dev/null)
       if [ "${HCHECK}" ]; then
         cd ../nightfall_3 && ENVIRONMENT=aws \
          LAUNCH_LOCAL=1 \
          CLIENT_HOST=${CLIENT} \
+         CLIENT_URL=http://${CLIENT} \
+         CLIENT_TX_WORKER_URL=http://${CLIENT_TX_WORKER} \
+         CLIENT_BP_WORKER_URL=http://${CLIENT_BP_WORKER} \
          CLIENT_PORT=80 \
          USER1_MNEMONIC=${USER1_MNEMONIC} \
          USER1_KEY=${USER1_KEY} \
@@ -140,7 +162,6 @@ else
          MONGO_INITDB_ROOT_USERNAME=${MONGO_USERNAME} \
          MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}  \
          MONGO_CONNECTION_STRING="${MONGO_CONNECTION_STRING}" \
-         N_TRANSACTIONS=${N_TRANSACTIONS} \
          npx hardhat test --bail --no-compile ${TEST_FILE}
         break
       fi

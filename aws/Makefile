@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=70a01de4792cb1e68cdc01d4c78f197932a4f4ca
+NIGHTFALL_BRANCH=e796a0c6b6a11f7bdb1059e32589245d0559332f
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -237,7 +237,7 @@ kill-test_contracts:
 # Mnemonic
 mnemonic:
 	cp test/client/client-command.mjs nightfall_3/cli/src
-	cd scripts && DELETE_DB=y RELEASE=${RELEASE} CLIENT_COMMAND=mnemonic MNEMONIC="${MNEMONIC}" ./client-command.sh
+	cd scripts && RELEASE=${RELEASE} CLIENT_COMMAND=mnemonic MNEMONIC="${MNEMONIC}" ./client-command.sh
 
 fund-accounts:
 	cp test/deployer/fund-accounts.mjs nightfall_3/cli/src
@@ -248,6 +248,10 @@ test-ping_pong:
 	mkdir -p nightfall_3/test/ping-pong-single
 	cp test/ping-pong/* nightfall_3/test/ping-pong-single
 	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=PING_PONG ./launch-test.sh
+
+test-load:
+	cp test/client/load.test.mjs nightfall_3/test/
+	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=LOAD ./launch-test.sh
 
 # Launch txw test
 test-opt_txw:

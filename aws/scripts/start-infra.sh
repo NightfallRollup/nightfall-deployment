@@ -51,8 +51,108 @@ done
 rm -f ./output.txt
 set -e
 
+# Start Optimist TX Workers
+if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
+  echo "Starting Optimist TX Workers service..."
+  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${OPTIMIST_TX_WORKER_N} ./status-service.sh opttxw)
+  OPTIMIST_TXW_RUNNING=$(echo ${OPTIMIST_TXW_STATUS} | grep Running)
+  OPTIMIST_TXW_DESIRED=$(echo ${OPTIMIST_TXW_STATUS} | grep Desired)
+  OPTIMIST_TXW_RUNNING_COUNT=$(echo ${OPTIMIST_TXW_RUNNING: -1})
+  OPTIMIST_TXW_DESIRED_COUNT=$(echo ${OPTIMIST_TXW_DESIRED: -1})
+  
+  #if [[  (-z ${OPTIMIST_TXW_STATUS}) || ("${OPTIMIST_TXW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_TXW_RUNNING_COUNT}" != "0") ]]; then
+  # echo "Optimist TX Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_TXW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_TXW_DESIRED_COUNT}"
+  # echo "Run make-stop opttxw first"
+  # exit 1
+  #i
+
+  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${OPTIMIST_TX_WORKER_N} ./start-service.sh opttxw)
+  echo "---- Optimist TX Workers Status ----"
+  echo "New ${OPTIMIST_TXW_STATUS}"
+fi
+
+# Start Optimist BA Workers
+if [ "${OPTIMIST_N}" -gt 0 ]; then
+  echo "Starting Optimist BA Workers service..."
+  OPTIMIST_BAW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbaw)
+  OPTIMIST_BAW_RUNNING=$(echo ${OPTIMIST_BAW_STATUS} | grep Running)
+  OPTIMIST_BAW_DESIRED=$(echo ${OPTIMIST_BAW_STATUS} | grep Desired)
+  OPTIMIST_BAW_RUNNING_COUNT=$(echo ${OPTIMIST_BAW_RUNNING: -1})
+  OPTIMIST_BAW_DESIRED_COUNT=$(echo ${OPTIMIST_BAW_DESIRED: -1})
+  
+  #f [[  (-z ${OPTIMIST_BAW_STATUS}) || ("${OPTIMIST_BAW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_BAW_RUNNING_COUNT}" != "0") ]]; then
+  # echo "Optimist BA Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_BAW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_BAW_DESIRED_COUNT}"
+  # echo "Run make-stop opttxw first"
+  # exit 1
+  #i
+
+  OPTIMIST_BAW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh optbaw)
+  echo "---- Optimist BA Workers Status ----"
+  echo "New ${OPTIMIST_BAW_STATUS}"
+fi
+
+# Start Optimist BP Workers
+if [ "${OPTIMIST_N}" -gt 0 ]; then
+  echo "Starting Optimist BP Workers service..."
+  OPTIMIST_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbpw)
+  OPTIMIST_BPW_RUNNING=$(echo ${OPTIMIST_BPW_STATUS} | grep Running)
+  OPTIMIST_BPW_DESIRED=$(echo ${OPTIMIST_BPW_STATUS} | grep Desired)
+  OPTIMIST_BPW_RUNNING_COUNT=$(echo ${OPTIMIST_BPW_RUNNING: -1})
+  OPTIMIST_BPW_DESIRED_COUNT=$(echo ${OPTIMIST_BPW_DESIRED: -1})
+  
+  #f [[  (-z ${OPTIMIST_BPW_STATUS}) || ("${OPTIMIST_BPW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_BPW_RUNNING_COUNT}" != "0") ]]; then
+  # echo "Optimist BP Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_BPW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_BPW_DESIRED_COUNT}"
+  # echo "Run make-stop opttxw first"
+  # exit 1
+  #i
+
+  OPTIMIST_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh optbpw)
+  echo "---- Optimist BP Workers Status ----"
+  echo "New ${OPTIMIST_BPW_STATUS}"
+fi
+
+
 # Start Optimist
 if [ "${OPTIMIST_N}" -gt 0 ]; then
+  # Check opt txw are alive
+  if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
+    while true; do
+      echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
+      OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${OPTIMIST_TXW_RESPONSE}" ]; then
+        echo "Connected to ${OPTIMIST_TXW_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
+  fi
+
+  # Check opt bpw are alive
+  if [ "${OPTIMIST_N}" -gt 0 ]; then
+    while true; do
+      echo "Waiting for connection with ${OPTIMIST_BP_WORKER_HOST}..."
+      OPTIMIST_BPW_RESPONSE=$(curl https://"${OPTIMIST_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${OPTIMIST_BPW_RESPONSE}" ]; then
+        echo "Connected to ${OPTIMIST_BPW_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
+  fi
+
+  # Check opt baw are alive
+  if [ "${OPTIMIST_N}" -gt 0 ]; then
+    while true; do
+      echo "Waiting for connection with ${OPTIMIST_BA_WORKER_HOST}..."
+      OPTIMIST_BAW_RESPONSE=$(curl https://"${OPTIMIST_BA_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${OPTIMIST_BAW_RESPONSE}" ]; then
+        echo "Connected to ${OPTIMIST_BAW_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
+  fi
+
   echo "Starting Optmist service..."
   OPTIMIST_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optimist)
   OPTIMIST_RUNNING=$(echo ${OPTIMIST_STATUS} | grep Running)
@@ -60,11 +160,11 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
   OPTIMIST_RUNNING_COUNT=$(echo ${OPTIMIST_RUNNING: -1})
   OPTIMIST_DESIRED_COUNT=$(echo ${OPTIMIST_DESIRED: -1})
   
-  if [[  (-z ${OPTIMIST_STATUS}) || ("${OPTIMIST_DESIRED_COUNT}" != "0") || ("${OPTIMIST_RUNNING_COUNT}" != "0") ]]; then
-    echo "Optimist service is running (and shouldnt). Running tasks : ${OPTIMIST_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_DESIRED_COUNT}"
-    echo "Run make-stop optimist first"
-    exit 1
-  fi
+  #if [[  (-z ${OPTIMIST_STATUS}) || ("${OPTIMIST_DESIRED_COUNT}" != "0") || ("${OPTIMIST_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Optimist service is running (and shouldnt). Running tasks : ${OPTIMIST_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_DESIRED_COUNT}"
+    #echo "Run make-stop optimist first"
+    #exit 1
+  #fi
   
   OPTIMIST_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh optimist)
   echo "---- Optimist Status ----"
@@ -91,11 +191,11 @@ if [ "${PROPOSER_N}" -gt 0 ]; then
   PROPOSER_RUNNING_COUNT=$(echo ${PROPOSER_RUNNING: -1})
   PROPOSER_DESIRED_COUNT=$(echo ${PROPOSER_DESIRED: -1})
   
-  if [[  (-z ${PROPOSER_STATUS}) || ("${PROPOSER_DESIRED_COUNT}" != "0") || ("${PROPOSER_RUNNING_COUNT}" != "0") ]]; then
-    echo "Proposer service is running (and shouldnt). Running tasks : ${PROPOSER_RUNNING_COUNT}. Desired tasks: ${PROPOSER_DESIRED_COUNT}"
-    echo "Run make-stop proposer first"
-    exit 1
-  fi
+  #if [[  (-z ${PROPOSER_STATUS}) || ("${PROPOSER_DESIRED_COUNT}" != "0") || ("${PROPOSER_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Proposer service is running (and shouldnt). Running tasks : ${PROPOSER_RUNNING_COUNT}. Desired tasks: ${PROPOSER_DESIRED_COUNT}"
+    #echo "Run make-stop proposer first"
+    #exit 1
+  #fi
   
   PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh proposer)
   echo "---- Proposer Status ----"
@@ -112,77 +212,16 @@ if [ "${CHALLENGER_N}" -gt 0 ]; then
   CHALLENGER_RUNNING_COUNT=$(echo ${CHALLENGER_RUNNING: -1})
   CHALLENGER_DESIRED_COUNT=$(echo ${CHALLENGER_DESIRED: -1})
   
-  if [[  (-z ${CHALLENGER_STATUS}) || ("${CHALLENGER_DESIRED_COUNT}" != "0") || ("${CHALLENGER_RUNNING_COUNT}" != "0") ]]; then
-    echo "Challenger service is running (and shouldnt). Running tasks : ${CHALLENGER_RUNNING_COUNT}. Desired tasks: ${CHALLENGER_DESIRED_COUNT}"
-    echo "Run make-stop challenger first"
-    exit 1
-  fi
+  #if [[  (-z ${CHALLENGER_STATUS}) || ("${CHALLENGER_DESIRED_COUNT}" != "0") || ("${CHALLENGER_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Challenger service is running (and shouldnt). Running tasks : ${CHALLENGER_RUNNING_COUNT}. Desired tasks: ${CHALLENGER_DESIRED_COUNT}"
+    #echo "Run make-stop challenger first"
+    #exit 1
+  #fi
 
   CHALLENGER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh challenger)
   echo "---- Challenger Status ----"
   echo "New ${CHALLENGER_STATUS}"
 fi
-
-# Start Optimist TX Workers
-if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
-  echo "Starting Optimist TX Workers service..."
-  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${OPTIMIST_TX_WORKER_N} ./status-service.sh opttxw)
-  OPTIMIST_TXW_RUNNING=$(echo ${OPTIMIST_TXW_STATUS} | grep Running)
-  OPTIMIST_TXW_DESIRED=$(echo ${OPTIMIST_TXW_STATUS} | grep Desired)
-  OPTIMIST_TXW_RUNNING_COUNT=$(echo ${OPTIMIST_TXW_RUNNING: -1})
-  OPTIMIST_TXW_DESIRED_COUNT=$(echo ${OPTIMIST_TXW_DESIRED: -1})
-  
-  if [[  (-z ${OPTIMIST_TXW_STATUS}) || ("${OPTIMIST_TXW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_TXW_RUNNING_COUNT}" != "0") ]]; then
-    echo "Optimist TX Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_TXW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_TXW_DESIRED_COUNT}"
-    echo "Run make-stop opttxw first"
-    exit 1
-  fi
-
-  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh opttxw)
-  echo "---- Optimist TX Workers Status ----"
-  echo "New ${OPTIMIST_TXW_STATUS}"
-fi
-
-# Start Optimist BA Workers
-if [ "${OPTIMIST_N}" -gt 0 ]; then
-  echo "Starting Optimist BA Workers service..."
-  OPTIMIST_BAW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbaw)
-  OPTIMIST_BAW_RUNNING=$(echo ${OPTIMIST_BAW_STATUS} | grep Running)
-  OPTIMIST_BAW_DESIRED=$(echo ${OPTIMIST_BAW_STATUS} | grep Desired)
-  OPTIMIST_BAW_RUNNING_COUNT=$(echo ${OPTIMIST_BAW_RUNNING: -1})
-  OPTIMIST_BAW_DESIRED_COUNT=$(echo ${OPTIMIST_BAW_DESIRED: -1})
-  
-  if [[  (-z ${OPTIMIST_BAW_STATUS}) || ("${OPTIMIST_BAW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_BAW_RUNNING_COUNT}" != "0") ]]; then
-    echo "Optimist BA Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_BAW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_BAW_DESIRED_COUNT}"
-    echo "Run make-stop opttxw first"
-    exit 1
-  fi
-
-  OPTIMIST_BAW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh optbaw)
-  echo "---- Optimist BA Workers Status ----"
-  echo "New ${OPTIMIST_BAW_STATUS}"
-fi
-
-# Start Optimist BP Workers
-if [ "${OPTIMIST_N}" -gt 0 ]; then
-  echo "Starting Optimist BP Workers service..."
-  OPTIMIST_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbpw)
-  OPTIMIST_BPW_RUNNING=$(echo ${OPTIMIST_BPW_STATUS} | grep Running)
-  OPTIMIST_BPW_DESIRED=$(echo ${OPTIMIST_BPW_STATUS} | grep Desired)
-  OPTIMIST_BPW_RUNNING_COUNT=$(echo ${OPTIMIST_BPW_RUNNING: -1})
-  OPTIMIST_BPW_DESIRED_COUNT=$(echo ${OPTIMIST_BPW_DESIRED: -1})
-  
-  if [[  (-z ${OPTIMIST_BPW_STATUS}) || ("${OPTIMIST_BPW_DESIRED_COUNT}" != "0") || ("${OPTIMIST_BPW_RUNNING_COUNT}" != "0") ]]; then
-    echo "Optimist BP Workers Service service is running (and shouldnt). Running tasks : ${OPTIMIST_BPW_RUNNING_COUNT}. Desired tasks: ${OPTIMIST_BPW_DESIRED_COUNT}"
-    echo "Run make-stop opttxw first"
-    exit 1
-  fi
-
-  OPTIMIST_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh optbpw)
-  echo "---- Optimist BP Workers Status ----"
-  echo "New ${OPTIMIST_BPW_STATUS}"
-fi
-
 
 # Start publisher
 if [ "${PUBLISHER_ENABLE}" = "true" ]; then
@@ -193,11 +232,11 @@ if [ "${PUBLISHER_ENABLE}" = "true" ]; then
   PUBLISHER_RUNNING_COUNT=$(echo ${PUBLISHER_RUNNING: -1})
   PUBLISHER_DESIRED_COUNT=$(echo ${PUBLISHER_DESIRED: -1})
   
-  if [[  (-z ${PUBLISHER_STATUS}) || ("${PUBLISHER_DESIRED_COUNT}" != "0") || ("${PUBLISHER_RUNNING_COUNT}" != "0") ]]; then
-    echo "Publisher service is running (and shouldnt). Running tasks : ${PUBLISHER_RUNNING_COUNT}. Desired tasks: ${PUBLISHER_DESIRED_COUNT}"
-    echo "Run make-stop publisher first"
-    exit 1
-  fi
+  #if [[  (-z ${PUBLISHER_STATUS}) || ("${PUBLISHER_DESIRED_COUNT}" != "0") || ("${PUBLISHER_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Publisher service is running (and shouldnt). Running tasks : ${PUBLISHER_RUNNING_COUNT}. Desired tasks: ${PUBLISHER_DESIRED_COUNT}"
+    #echo "Run make-stop publisher first"
+    #exit 1
+  #fi
 
   PUBLISHER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh publisher)
   echo "---- Publisher Status ----"
@@ -214,11 +253,11 @@ if [ "${DASHBOARD_ENABLE}" = "true" ]; then
   DASHBOARD_RUNNING_COUNT=$(echo ${DASHBOARD_RUNNING: -1})
   DASHBOARD_DESIRED_COUNT=$(echo ${DASHBOARD_DESIRED: -1})
   
-  if [[  (-z ${DASHBOARD_STATUS}) || ("${DASHBOARD_DESIRED_COUNT}" != "0") || ("${DASHBOARD_RUNNING_COUNT}" != "0") ]]; then
-    echo "Dashboard service is running (and shouldnt). Running tasks : ${DASHBOARD_RUNNING_COUNT}. Desired tasks: ${DASHBOARD_DESIRED_COUNT}"
-    echo "Run make-stop dashboard first"
-    exit 1
-  fi
+  #if [[  (-z ${DASHBOARD_STATUS}) || ("${DASHBOARD_DESIRED_COUNT}" != "0") || ("${DASHBOARD_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Dashboard service is running (and shouldnt). Running tasks : ${DASHBOARD_RUNNING_COUNT}. Desired tasks: ${DASHBOARD_DESIRED_COUNT}"
+    #echo "Run make-stop dashboard first"
+    #exit 1
+  #fi
 
   DASHBOARD_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh dashboard)
   echo "---- Dashboard Status ----"
@@ -253,47 +292,6 @@ if [ "${CHALLENGER_N}" -gt 0 ]; then
   done
 fi
 
-
-# Check opt txw are alive
-if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
-  while true; do
-    echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
-    OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-    if [ "${OPTIMIST_TXW_RESPONSE}" ]; then
-      echo "Connected to ${OPTIMIST_TXW_HOST}..."
-	    break
-    fi
-    sleep 10
-  done
-fi
-
-# Check opt bpw are alive
-if [ "${OPTIMIST_N}" -gt 0 ]; then
-  while true; do
-    echo "Waiting for connection with ${OPTIMIST_BP_WORKER_HOST}..."
-    OPTIMIST_BPW_RESPONSE=$(curl https://"${OPTIMIST_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-    if [ "${OPTIMIST_BPW_RESPONSE}" ]; then
-      echo "Connected to ${OPTIMIST_BPW_HOST}..."
-	    break
-    fi
-    sleep 10
-  done
-fi
-
-# Check opt baw are alive
-if [ "${OPTIMIST_N}" -gt 0 ]; then
-  while true; do
-    echo "Waiting for connection with ${OPTIMIST_BA_WORKER_HOST}..."
-    OPTIMIST_BAW_RESPONSE=$(curl https://"${OPTIMIST_BA_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-    if [ "${OPTIMIST_BAW_RESPONSE}" ]; then
-      echo "Connected to ${OPTIMIST_BAW_HOST}..."
-	    break
-    fi
-    sleep 10
-  done
-fi
-
-
 # Check publisher is alive
 if [ "${PUBLISHER_ENABLE}" = "true" ]; then
   while true; do
@@ -325,19 +323,19 @@ fi
 echo "Number of clients deployed: ${CLIENT_N}"
 if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   echo "Starting circom worker service..."
-  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CIRCOM_WORKER_COUNT} ./status-service.sh circom)
+  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CIRCOM_WORKER_N} ./status-service.sh circom)
   CIRCOM_RUNNING=$(echo ${CIRCOM_STATUS} | grep Running)
   CIRCOM_DESIRED=$(echo ${CIRCOM_STATUS} | grep Desired)
   CIRCOM_RUNNING_COUNT=$(echo ${CIRCOM_RUNNING: -1})
   CIRCOM_DESIRED_COUNT=$(echo ${CIRCOM_DESIRED: -1})
   
-  if [[  (-z ${CIRCOM_STATUS}) || ("${CIRCOM_DESIRED_COUNT}" != "0") || ("${CIRCOM_RUNNING_COUNT}" != "0") ]]; then
-    echo "Circom service is running (and shouldnt). Running tasks : ${CIRCOM_RUNNING_COUNT}. Desired tasks: ${CIRCOM_DESIRED_COUNT}"
-    echo "Run make-stop circom first"
-    exit 1
-  fi
+  #if [[  (-z ${CIRCOM_STATUS}) || ("${CIRCOM_DESIRED_COUNT}" != "0") || ("${CIRCOM_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Circom service is running (and shouldnt). Running tasks : ${CIRCOM_RUNNING_COUNT}. Desired tasks: ${CIRCOM_DESIRED_COUNT}"
+    #echo "Run make-stop circom first"
+    #exit 1
+  #fi
   
-  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh circom)
+  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CIRCOM_WORKER_N} ./start-service.sh circom)
   echo "---- Circom Status ----"
   echo "New ${CIRCOM_STATUS}"
   
@@ -360,11 +358,11 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   CLIENT_RUNNING_COUNT=$(echo ${CLIENT_RUNNING: -1})
   CLIENT_DESIRED_COUNT=$(echo ${CLIENT_DESIRED: -1})
   
-  if [[  (-z ${CLIENT_STATUS}) || ("${CLIENT_DESIRED_COUNT}" != "0") || ("${CLIENT_RUNNING_COUNT}" != "0") ]]; then
-    echo "Client service is running (and shouldnt). Running tasks : ${CLIENT_RUNNING_COUNT}. Desired tasks: ${CLIENT_DESIRED_COUNT}"
-    echo "Run make-stop client first"
-    exit 1
-  fi
+  #if [[  (-z ${CLIENT_STATUS}) || ("${CLIENT_DESIRED_COUNT}" != "0") || ("${CLIENT_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Client service is running (and shouldnt). Running tasks : ${CLIENT_RUNNING_COUNT}. Desired tasks: ${CLIENT_DESIRED_COUNT}"
+    #echo "Run make-stop client first"
+    #exit 1
+  #fi
   
   CLIENT_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh client)
   echo "---- Circom Status ----"
@@ -379,11 +377,11 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   CLIENT_BPW_RUNNING_COUNT=$(echo ${CLIENT_BPW_RUNNING: -1})
   CLIENT_BPW_DESIRED_COUNT=$(echo ${CLIENT_BPW_DESIRED: -1})
   
-  if [[  (-z ${CLIENT_BPW_STATUS}) || ("${CLIENT_BPW_DESIRED_COUNT}" != "0") || ("${CLIENT_BPW_RUNNING_COUNT}" != "0") ]]; then
-    echo "Client BP worker service is running (and shouldnt). Running tasks : ${CLIENT_BPW_RUNNING_COUNT}. Desired tasks: ${CLIENT_BPW_DESIRED_COUNT}"
-    echo "Run make-stop client first"
-    exit 1
-  fi
+  #if [[  (-z ${CLIENT_BPW_STATUS}) || ("${CLIENT_BPW_DESIRED_COUNT}" != "0") || ("${CLIENT_BPW_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Client BP worker service is running (and shouldnt). Running tasks : ${CLIENT_BPW_RUNNING_COUNT}. Desired tasks: ${CLIENT_BPW_DESIRED_COUNT}"
+    #echo "Run make-stop client first"
+    #exit 1
+  #fi
   
   CLIENT_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh clientbpw)
   echo "---- Circom Status ----"
@@ -392,26 +390,26 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
 
   # Start Client TX Worker
   echo "Starting client TX service..."
-  CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N}./status-service.sh clienttxw)
+  CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./status-service.sh clienttxw)
   CLIENT_TXW_RUNNING=$(echo ${CLIENT_TXW_STATUS} | grep Running)
   CLIENT_TXW_DESIRED=$(echo ${CLIENT_TXW_STATUS} | grep Desired)
   CLIENT_TXW_RUNNING_COUNT=$(echo ${CLIENT_TXW_RUNNING: -1})
   CLIENT_TXW_DESIRED_COUNT=$(echo ${CLIENT_TXW_DESIRED: -1})
   
-  if [[  (-z ${CLIENT_TXW_STATUS}) || ("${CLIENT_TXW_DESIRED_COUNT}" != "0") || ("${CLIENT_TXW_RUNNING_COUNT}" != "0") ]]; then
-    echo "Client TX worker service is running (and shouldnt). Running tasks : ${CLIENT_TXW_RUNNING_COUNT}. Desired tasks: ${CLIENT_TXW_DESIRED_COUNT}"
-    echo "Run make-stop client first"
-    exit 1
-  fi
+  #if [[  (-z ${CLIENT_TXW_STATUS}) || ("${CLIENT_TXW_DESIRED_COUNT}" != "0") || ("${CLIENT_TXW_RUNNING_COUNT}" != "0") ]]; then
+    #echo "Client TX worker service is running (and shouldnt). Running tasks : ${CLIENT_TXW_RUNNING_COUNT}. Desired tasks: ${CLIENT_TXW_DESIRED_COUNT}"
+    #echo "Run make-stop client first"
+    #exit 1
+  #fi
   
-  CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh clienttxw)
+  CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./start-service.sh clienttxw)
   echo "---- Circom Status ----"
   echo "New ${CLIENT_TXW_STATUS}"
   
     # Check client is alive
   while true; do
-    echo "Waiting for connection with ${CLIENT_BPW_HOST}..."
-    CLIENT_BPW_RESPONSE=$(curl https://"${CLIENT_BPW_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${CLIENT_BP_WORKER_HOST}..."
+    CLIENT_BPW_RESPONSE=$(curl https://"${CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${CLIENT_BPW_RESPONSE}" ]; then
       echo "Connected to ${CLIENT_BPW_HOST}..."
 	    break

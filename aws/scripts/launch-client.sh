@@ -212,6 +212,7 @@ while true; do
     tmux send-keys -t ${CLIENT_BPW_PANE} "docker run --rm -d \
          --name client-bpw \
          -v ${VOLUMES}/build:/app/build \
+         -p 3020:80 \
          -e MONGO_URL=mongodb://${MONGO_IP}:27017 \
          -e LOG_LEVEL=debug \
          -e LAUNCH_LOCAL=1 \
@@ -245,6 +246,7 @@ while true; do
     tmux send-keys -t ${CLIENT_TXW_PANE} "docker run --rm -d \
          --name client-txw \
          -v ${VOLUMES}/build:/app/build \
+         -p 3010:80 \
          -e MONGO_URL=mongodb://${MONGO_IP}:27017 \
          -e LOG_LEVEL=debug \
          -e LAUNCH_LOCAL=1 \
