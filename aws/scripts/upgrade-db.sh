@@ -30,6 +30,11 @@ CURRENT_INSTANCE=$(aws docdb describe-db-instances \
   --region ${REGION} \
   | jq ".DBInstances[].DBInstanceClass" | tr -d '\"')
 
+INSTANCE_STATUS=$(aws docdb describe-db-instances \
+    --db-instance-identifier ${MONGO_ID} \
+    --region ${REGION} \
+    --query 'DBInstances[*].[DBInstanceIdentifier,DBInstanceStatus]')
+
 if [ -z "${INSTANCE_TYPE}" ]; then
  echo "Current instance type: ${CURRENT_INSTANCE}"
  echo "Available instance types:"
@@ -37,7 +42,8 @@ if [ -z "${INSTANCE_TYPE}" ]; then
     --engine docdb \
     --query 'OrderableDBInstanceOptions[*].DBInstanceClass' \
     --region ${REGION}
-  exit
+ echo "Instance status: ${INSTANCE_STATUS}"
+ exit
 fi
 
 NEW_INSTANCE=$(aws docdb modify-db-instance \
@@ -50,6 +56,7 @@ NEW_INSTANCE=$(aws docdb modify-db-instance \
 
 if [ "${NEW_INSTANCE}" ]; then
   echo "New instance class: ${NEW_INSTANCE}"
+  echo "Instance status: ${INSTANCE_STATUS}"
 else
   echo "Available instance types:"
   aws docdb describe-orderable-db-instance-options \

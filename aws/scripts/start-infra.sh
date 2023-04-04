@@ -120,7 +120,7 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
       echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
       OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${OPTIMIST_TXW_RESPONSE}" ]; then
-        echo "Connected to ${OPTIMIST_TXW_HOST}..."
+        echo "Connected to ${OPTIMIST_TX_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -133,7 +133,7 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
       echo "Waiting for connection with ${OPTIMIST_BP_WORKER_HOST}..."
       OPTIMIST_BPW_RESPONSE=$(curl https://"${OPTIMIST_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${OPTIMIST_BPW_RESPONSE}" ]; then
-        echo "Connected to ${OPTIMIST_BPW_HOST}..."
+        echo "Connected to ${OPTIMIST_BP_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -146,7 +146,7 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
       echo "Waiting for connection with ${OPTIMIST_BA_WORKER_HOST}..."
       OPTIMIST_BAW_RESPONSE=$(curl https://"${OPTIMIST_BA_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${OPTIMIST_BAW_RESPONSE}" ]; then
-        echo "Connected to ${OPTIMIST_BAW_HOST}..."
+        echo "Connected to ${OPTIMIST_BA_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -411,7 +411,7 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
     echo "Waiting for connection with ${CLIENT_BP_WORKER_HOST}..."
     CLIENT_BPW_RESPONSE=$(curl https://"${CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${CLIENT_BPW_RESPONSE}" ]; then
-      echo "Connected to ${CLIENT_BPW_HOST}..."
+      echo "Connected to ${CLIENT_BP_WORKER_HOST}..."
 	    break
     fi
     sleep 10
@@ -430,10 +430,10 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   
   # Check client is alive
   while true; do
-    echo "Waiting for connection with ${CLIENT_TXW_HOST}..."
-    CLIENT_TXW_RESPONSE=$(curl https://"${CLIENT_TXW_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${CLIENT_TX_WORKER_HOST}..."
+    CLIENT_TXW_RESPONSE=$(curl https://"${CLIENT_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${CLIENT_TXW_RESPONSE}" ]; then
-      echo "Connected to ${CLIENT_TXW_HOST}..."
+      echo "Connected to ${CLIENT_TX_WORKER_HOST}..."
 	    break
     fi
     sleep 10

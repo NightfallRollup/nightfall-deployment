@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=e796a0c6b6a11f7bdb1059e32589245d0559332f
+NIGHTFALL_BRANCH=28b3476278ce2d5e156fae362c38f0c2903d6d22
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -394,6 +394,7 @@ build-proposer:
 build-worker:
 	make login-ecr
 	@make build-circom
+	@make build-rapidsnark
 	cp docker/worker.Dockerfile nightfall_3/docker/worker.Dockerfile
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-worker GIT_COMMIT=${GIT_COMMIT}
@@ -433,6 +434,9 @@ build-geth:
 
 build-circom:
 	cd nightfall_3 && docker build -f docker/circom.Dockerfile . -t nightfall-circom:latest
+
+build-rapidsnark:
+	cd nightfall_3 && docker build -f docker/rapidsnark.Dockerfile . -t nightfall-rapidsnark:latest
 
 # Push individual images to ECR
 push-client:
@@ -811,7 +815,7 @@ exec-geth:
     fi
 
 exec-worker:
-	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh circom${INSTANCE_INDEX}Container
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh circomWorker${INSTANCE_INDEX}Container
 
 exec-client:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client${INSTANCE_INDEX}Container

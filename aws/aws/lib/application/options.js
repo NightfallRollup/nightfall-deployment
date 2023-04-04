@@ -189,7 +189,7 @@ const challengerAppAttr = {
       GAS_PRICE: process.env.GAS_PRICE,
       GAS: process.env.GAS_PROPOSER,
       ENVIRONMENT: 'aws',
-      OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS: process.env.OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS,
+      FULL_VERIFICATION_SELF_PROPOSED_BLOCKS: process.env.OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS,
       OPTIMIST_BP_WORKER_WS_SERVICE: process.env.OPTIMIST_BP_WORKER_WS_SERVICE,
     },
     secretVars: [
@@ -316,7 +316,7 @@ const optTxWorkerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'opt_txw', 
   assignPublicIp: false,
-  enable: Number(process.env.OPTIMIST_TX_WORKER_N) > 0,
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_TX_WORKER_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -385,7 +385,7 @@ const optBpWorkerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'opt_bpw', 
   assignPublicIp: false,
-  enable: Number(process.env.OPTIMIST_N) > 0,
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -466,7 +466,7 @@ const optBaWorkerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'opt_baw', 
   assignPublicIp: false,
-  enable: Number(process.env.OPTIMIST_N) > 0,
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -720,8 +720,9 @@ const circomWorkerAppAttr = {
       },
     ],
     environmentVars: {
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.CIRCOM_WORKER_LOG_HTTP_PAYLOAD_ENABLE,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.CIRCOM_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.CIRCOM_WORKER_LOG_HTTP_FULL_DATA,
+      PROVER_TYPE: process.env.CIRCOM_WORKER_TYPE,
     },
     secretVars: [
     ],
@@ -732,7 +733,7 @@ const circomWorkerAppAttr = {
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
   cpu: process.env.CIRCOM_WORKER_CPU_COUNT ? Number(process.env.CIRCOM_WORKER_CPU_COUNT ) : 1024,
-  desiredCount: Number(process.env.CIRCOM_WORKER_N),
+  desiredCount: process.env.NIGHTFALL_LEGACY === 'true' ? 1 : Number(process.env.CIRCOM_WORKER_N),
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -823,7 +824,7 @@ const clientTxWorkerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'client_txw',
   assignPublicIp: process.env.CLIENT_TX_WORKER_SERVICE_ALB === 'external',
-  enable: Number(process.env.CLIENT_N) > 0,
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.CLIENT_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -901,7 +902,7 @@ const clientBpWorkerAppAttr = {
   // REQUIRED. Application/Task name
   name: 'client_bpw',
   assignPublicIp: process.env.CLIENT_BP_WORKER_SERVICE_ALB === 'external',
-  enable: Number(process.env.CLIENT_N) > 0,
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.CLIENT_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [

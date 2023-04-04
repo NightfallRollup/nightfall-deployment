@@ -288,7 +288,7 @@ while true; do
       echo -e "[" > ${VOLUMES}/proving_files/s3_hash.txt
 
       for PROVING_FILE_FOLDERS in * ; do
-        if [ -d "${PROVING_FILE_FOLDERS}" ]; then
+        if [ -d "${PROVING_FILE_FOLDERS}" ] && [ "${PROVING_FILE_FOLDERS}" != "prover" ]; then
           aws s3 cp ${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}.zkey ${S3_BUCKET_WALLET}/circuits/${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}.zkey
           aws s3 cp ${PROVING_FILE_FOLDERS}/${PROVING_FILE_FOLDERS}_js/${PROVING_FILE_FOLDERS}.wasm ${S3_BUCKET_WALLET}/circuits/${PROVING_FILE_FOLDERS}_js/${PROVING_FILE_FOLDERS}.wasm
           HF_ZKEY=$(cat ${VOLUMES}/proving_files/hash.txt | grep ${PROVING_FILE_FOLDERS}.zkey | awk '{print $1}')
