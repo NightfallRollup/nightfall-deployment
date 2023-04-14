@@ -22,7 +22,7 @@ chai.use(chaiAsPromised);
 // we need require here to import jsons
 const environment = config.ENVIRONMENTS[process.env.ENVIRONMENT] || config.ENVIRONMENTS.aws;
 const {
-  N_TRANSACTIONS = 460,
+  N_TRANSACTIONS = 100,
   N_ITER = 1,
   BLOCK_GENERATION_MILLIS = 20000,
   N_CPUS = 16,
@@ -132,7 +132,7 @@ describe('Tx worker test', () => {
       console.log('Balance User 0', balanceUser0After);
       console.log('Balance User 1', balanceUser1After);
     });
-    /*
+
     it('Deposits/Transfers', async function () {
       const balanceUser0Before = await getLayer2Balances(nf3Users[0], erc20Address);
       const balanceUser1Before = await getLayer2Balances(nf3Users[1], erc20Address);
@@ -199,7 +199,6 @@ describe('Tx worker test', () => {
       // log stats for id a
       logger.info(`Total transactions sent ${nTotalTransactions}`);
     });
-    */
   });
 
   after(async () => {

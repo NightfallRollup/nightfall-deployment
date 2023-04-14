@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=28b3476278ce2d5e156fae362c38f0c2903d6d22
+NIGHTFALL_BRANCH=3215c63840feb6aaa19bc8ffa539aff940d30925
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -297,6 +297,7 @@ build-all:
 	@make update-repo
 	@make build-client
 	@make build-client_txw
+	@make build-client_auxw
 	@make build-client_bpw
 	@make build-lazy_client
 	@make build-optimist
@@ -321,6 +322,7 @@ push-all:
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
@@ -344,6 +346,11 @@ build-client_txw:
 	@cp docker/docker-client-tx-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-tx-worker-entrypoint.sh
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT}
+
+build-client_auxw:
+	@cp docker/docker-client-aux-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-aux-worker-entrypoint.sh
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make build-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
 
 build-client_bpw:
 	@cp docker/docker-client-bp-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-bp-worker-entrypoint.sh
@@ -449,6 +456,11 @@ push-client_txw:
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT}
 
+push-client_auxw:
+	@make login-ecr
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
+
 push-client_bpw:
 	@make login-ecr
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
@@ -536,6 +548,7 @@ stop-infra:
 	make stop-worker
 	make stop-client
 	make stop-client_txw
+	make stop-client_auxw
 	make stop-client_bpw
 	#make stop-geth
 
@@ -587,6 +600,10 @@ stop-client_txw:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client_txw${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./stop-service.sh clienttxw${INSTANCE_INDEX}
 
+stop-client_auxw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client_aux${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh clientaux${INSTANCE_INDEX}
+
 stop-client_bpw:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client_bpw${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./stop-service.sh clientbpw${INSTANCE_INDEX}
@@ -610,6 +627,7 @@ start-infra_all:
 	  make start-worker; \
 	  make start-client; \
 	  make start-client_txw; \
+	  make start-client_auxw; \
 	  make start-client_bpw; \
     else \
 	  echo "Client service is disabled"; \
@@ -650,6 +668,9 @@ start-client:
 
 start-client_txw:
 	cd scripts && RELEASE=${RELEASE} NEW_DESIRED_COUNT=${NEW_DESIRED_COUNT} ./start-service.sh clienttxw${INSTANCE_INDEX}
+
+start-client_auxw:
+	cd scripts && RELEASE=${RELEASE} NEW_DESIRED_COUNT=${NEW_DESIRED_COUNT} ./start-service.sh clientaux${INSTANCE_INDEX}
 
 start-client_bpw:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh clientbpw${INSTANCE_INDEX}
@@ -717,6 +738,10 @@ restart-client_txw:
 	make stop-client_txw
 	make start-client_txw
 
+restart-client_auxw:
+	make stop-client_auxw
+	make start-client_auxw
+
 restart-client_bpw:
 	make stop-client_bpw
 	make start-client_bpw
@@ -765,6 +790,10 @@ status-client:
 status-client_txw:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh clienttxw${INSTANCE_INDEX} 
 	cd scripts && RELEASE=${RELEASE} ./status-task.sh client_txw${INSTANCE_INDEX}
+
+status-client_auxw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh clientaux${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh client_aux${INSTANCE_INDEX}
 
 status-client_bpw:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh clientbpw${INSTANCE_INDEX} 
@@ -822,6 +851,9 @@ exec-client:
 
 exec-client_txw:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client_txw${INSTANCE_INDEX}Container
+
+exec-client_auxw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client_auxw${INSTANCE_INDEX}Container
 
 exec-client_bpw:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client_bpw${INSTANCE_INDEX}Container

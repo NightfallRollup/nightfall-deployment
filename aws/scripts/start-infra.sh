@@ -365,9 +365,21 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   #fi
   
   CLIENT_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh client)
-  echo "---- Circom Status ----"
+  echo "---- Client Status ----"
   echo "New ${CLIENT_STATUS}"
   
+
+    # Start Client Auxw Worker
+  echo "Starting client AUX service..."
+  CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./status-service.sh clientaux)
+  CLIENT_AUXW_RUNNING=$(echo ${CLIENT_AUXW_STATUS} | grep Running)
+  CLIENT_AUXW_DESIRED=$(echo ${CLIENT_AUXW_STATUS} | grep Desired)
+  CLIENT_AUXW_RUNNING_COUNT=$(echo ${CLIENT_AUXW_RUNNING: -1})
+  CLIENT_AUXW_DESIRED_COUNT=$(echo ${CLIENT_AUXW_DESIRED: -1})
+
+  CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./start-service.sh clientaux)
+  echo "---- Client aux Status ----"
+  echo "New ${CLIENT_AUXW_STATUS}"
 
   # Start Client BP Worker
   echo "Starting client BP service..."
@@ -384,7 +396,7 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   #fi
   
   CLIENT_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh clientbpw)
-  echo "---- Circom Status ----"
+  echo "---- Client bpw Status ----"
   echo "New ${CLIENT_BPW_STATUS}"
   
 
@@ -403,10 +415,21 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   #fi
   
   CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./start-service.sh clienttxw)
-  echo "---- Circom Status ----"
+  echo "---- Client txw Status ----"
   echo "New ${CLIENT_TXW_STATUS}"
-  
-    # Check client is alive
+
+      # Check client auxw is alive
+  while true; do
+    echo "Waiting for connection with ${CLIENT_AUX_WORKER_HOST}..."
+    CLIENT_AUXW_RESPONSE=$(curl https://"${CLIENT_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    if [ "${CLIENT_AUXW_RESPONSE}" ]; then
+      echo "Connected to ${CLIENT_AUX_WORKER_HOST}..."
+	    break
+    fi
+    sleep 10
+  done
+
+    # Check client bpw is alive
   while true; do
     echo "Waiting for connection with ${CLIENT_BP_WORKER_HOST}..."
     CLIENT_BPW_RESPONSE=$(curl https://"${CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
@@ -428,7 +451,7 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
     sleep 10
   done
   
-  # Check client is alive
+  # Check client txis alive
   while true; do
     echo "Waiting for connection with ${CLIENT_TX_WORKER_HOST}..."
     CLIENT_TXW_RESPONSE=$(curl https://"${CLIENT_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)

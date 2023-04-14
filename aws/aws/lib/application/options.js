@@ -261,7 +261,7 @@ const optimistAppAttr = {
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
       MAX_BLOCK_SIZE: process.env.MAX_BLOCK_SIZE,
-      HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.OPTIMIST_LOG_HTTP_FULL_DATA,
@@ -337,14 +337,14 @@ const optTxWorkerAppAttr = {
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       ENVIRONMENT: 'aws',
-      HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.OPTIMIST_LOG_HTTP_FULL_DATA,
       MONGO_URL: process.env.MONGO_URL,
       OPTIMIST_DB: process.env.OPTIMIST_DB,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
-      OPTIMIST_TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_COUNT,
+      OPTIMIST_TX_WORKER_COUNT: process.env.OPTIMIST_TX_WORKER_CPU_COUNT,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     secretVars: [
@@ -416,7 +416,7 @@ const optBpWorkerAppAttr = {
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       ENVIRONMENT: 'aws',
-      HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.OPTIMIST_LOG_HTTP_FULL_DATA,
@@ -497,7 +497,7 @@ const optBaWorkerAppAttr = {
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       ENVIRONMENT: 'aws',
-      HASH_TYPE: process.env.OPTIMIST_HASH_TYPE,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.OPTIMIST_LOG_HTTP_FULL_DATA,
@@ -722,7 +722,9 @@ const circomWorkerAppAttr = {
     environmentVars: {
       LOG_HTTP_PAYLOAD_ENABLED: process.env.CIRCOM_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
       LOG_HTTP_FULL_DATA: process.env.CIRCOM_WORKER_LOG_HTTP_FULL_DATA,
-      PROVER_TYPE: process.env.CIRCOM_WORKER_TYPE,
+      PROVER_TYPE: process.env.CIRCOM_WORKER_PROVER_TYPE,
+      // if rapidsnarks, we only want on nodejs instance. So we fix number of CPUs here
+      CIRCOM_WORKER_COUNT: process.env.CIRCOM_WORKER_PROVER_TYPE === 'rapidsnark' ? '1' : process.env.CIRCOM_WORKER_CPU_COUNT,
     },
     secretVars: [
     ],
@@ -784,10 +786,12 @@ const clientAppAttr = {
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
       PROTOCOL: process.env.CLIENT_PROTOCOL,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       COMMITMENTS_DB: process.env.COMMITMENTS_DB,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+      CLIENT_AUX_WORKER_URL: `https://${process.env.CLIENT_AUX_WORKER_HOST}`,
     },
     secretVars: [
       {
@@ -857,11 +861,12 @@ const clientTxWorkerAppAttr = {
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       PROTOCOL: process.env.CLIENT_PROTOCOL,
       COMMITMENTS_DB: process.env.COMMITMENTS_DB,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
-      CLIENT_TX_WORKER_COUNT: process.env.CLIENT_TX_WORKER_COUNT,
+      CLIENT_TX_WORKER_COUNT: process.env.CLIENT_TX_WORKER_CPU_COUNT,
       CLIENT_URL: `https://${process.env.CLIENT_HOST}`,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
@@ -886,6 +891,84 @@ const clientTxWorkerAppAttr = {
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
   cpu: process.env.CLIENT_TX_WORKER_CPU_COUNT ? Number(process.env.CLIENT_TX_WORKER_CPU_COUNT ) : 1,
   desiredCount: Number(process.env.CLIENT_TX_WORKER_N),
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const clientAuxWorkerAppAttr = {
+  nInstances: process.env.CLIENT_N,
+  // REQUIRED. Application/Task name
+  name: 'client_aux',
+  assignPublicIp: process.env.CLIENT_AUX_WORKER_SERVICE_ALB === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.CLIENT_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.CLIENT_AUX_WORKER_PORT),
+        hostPort: Number(process.env.CLIENT_AUX_WORKER_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.CLIENT_AUX_WORKER_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+          unhealthyThresholdCount: 10,
+          healthyThresholdCount: 2,
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.CLIENT_AUX_WORKER_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
+      GAS: process.env.GAS_CLIENT,
+      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      MONGO_URL: process.env.MONGO_URL,
+      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      GAS_PRICE: process.env.GAS_PRICE,
+      STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
+      ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
+      DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
+      PROTOCOL: process.env.CLIENT_PROTOCOL,
+      COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
+      ENVIRONMENT: 'aws',
+      ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      CLIENT_AUX_WORKER_COUNT: process.env.CLIENT_AUX_WORKER_CPU_COUNT,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-client_auxw',
+    imageTag: process.env.RELEASE,
+  },
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+  cpu: process.env.CLIENT_AUX_WORKER_CPU_COUNT ? Number(process.env.CLIENT_AUX_WORKER_CPU_COUNT ) : 1,
+  desiredCount: Number(process.env.CLIENT_AUX_WORKER_N),
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -937,8 +1020,10 @@ const clientBpWorkerAppAttr = {
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
       PROTOCOL: process.env.CLIENT_PROTOCOL,
       COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      CLIENT_AUX_WORKER_URL: `https://${process.env.CLIENT_AUX_WORKER_HOST}`,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
@@ -984,6 +1069,7 @@ const appsAttr = [
   circomWorkerAppAttr,
   clientAppAttr,
   clientTxWorkerAppAttr,
+  clientAuxWorkerAppAttr,
   clientBpWorkerAppAttr,
 ];
 

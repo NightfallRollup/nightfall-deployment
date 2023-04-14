@@ -93,6 +93,7 @@ for i in `seq ${SINGLE_OPTIMIST} 1 ${OPTIMIST_N}`; do
      db.${TRANSACTIONS_COLLECTION}.createIndex({commitments:1});\
      db.${TRANSACTIONS_COLLECTION}.createIndex({nullifiers:1});\
      db.${TRANSACTIONS_COLLECTION}.createIndex({mempool: -1});\
+     db.${TRANSACTIONS_COLLECTION}.createIndex({fee: -1});\
      db.${TIMBER_COLLECTION}.createIndex({blockNumberL2:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockNumberL2:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockHash:-1});\

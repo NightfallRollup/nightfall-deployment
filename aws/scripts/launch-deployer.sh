@@ -178,9 +178,15 @@ if [ -z "${UPGRADE}" ]; then
 fi
 
 mkdir -p ${VOLUMES}/proving_files
+# Force rapidsnark PROVER_TYPE during deployment
+# to build the specific artifacts needed for rapidsnarks.
+# This allows to change prover type in a deployed network
 tmux send-keys -t ${WORKER_PANE} "docker run --rm -d \
     -v ${VOLUMES}/proving_files:/app/output \
-    --name worker -e LOG_LEVEL=${WORKER_LOG_LEVEL} ${ECR_REPO}/nightfall-worker:${RELEASE}" Enter
+    --name worker -e LOG_LEVEL=${WORKER_LOG_LEVEL} \
+    -e PROVER_TYPE=rapidsnark \
+    -e CIRCOM_WORKER_COUNT=1 \
+    ${ECR_REPO}/nightfall-worker:${RELEASE}" Enter
 tmux send-keys -t ${WORKER_PANE} "docker logs -f worker" Enter
 
 if [ ! -z "${USE_AWS_PRIVATE_KEY}" ]; then
@@ -241,6 +247,7 @@ while true; do
          -e MULTISIG_APPROVERS=${MULTISIG_APPROVERS} \
          -e WHITELISTING=${WHITELISTING} \
          -e DEPLOY_MOCKED_SANCTIONS_CONTRACT=${DEPLOY_MOCKED_SANCTIONS_CONTRACT} \
+         -e RESTRICT_TOKENS=${RESTRICT_TOKENS} \
          -e WETH_RESTRICT=${WETH_RESTRICT} \
          -e ERC20MOCK_RESTRICT=${ERC20MOCK_RESTRICT} \
          -e MATIC_RESTRICT=${MATIC_RESTRICT} \

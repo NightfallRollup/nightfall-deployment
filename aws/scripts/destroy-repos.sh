@@ -24,6 +24,7 @@ repoList=("geth" \
    "nightfall-client" \
    "nightfall-client_txw" \
    "nightfall-client_bpw" \
+   "nightfall-client_auxw" \
    "nightfall-deployer" \
    "nightfall-optimist" \
    "nightfall-opt_txw" \
