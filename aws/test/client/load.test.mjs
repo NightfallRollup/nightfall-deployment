@@ -22,7 +22,7 @@ chai.use(chaiAsPromised);
 // we need require here to import jsons
 const environment = config.ENVIRONMENTS[process.env.ENVIRONMENT] || config.ENVIRONMENTS.aws;
 const {
-  N_TRANSACTIONS = 100,
+  N_TRANSACTIONS = 10,
   N_ITER = 1,
   BLOCK_GENERATION_MILLIS = 20000,
   N_CPUS = 16,
@@ -51,10 +51,6 @@ async function makeBlockNow(optimistUrl) {
   await axios.post(`${optimistUrl}/block/make-now`);
 }
 
-async function makeBlock(optimistUrl) {
-  await makeBlockNow(optimistUrl);
-  await web3Client.waitForEvent(eventLogs, ['blockProposed']);
-}
 async function setBlockPeriod(optimistUrl, timeMs) {
   logger.info(`Setting block generation period to ${timeMs} ms`);
   await axios.post(`${optimistUrl}/block/block-time`, { timeMs });

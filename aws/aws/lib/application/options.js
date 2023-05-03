@@ -190,7 +190,8 @@ const challengerAppAttr = {
       GAS: process.env.GAS_PROPOSER,
       ENVIRONMENT: 'aws',
       FULL_VERIFICATION_SELF_PROPOSED_BLOCKS: process.env.OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS,
-      OPTIMIST_BP_WORKER_WS_SERVICE: process.env.OPTIMIST_BP_WORKER_WS_SERVICE,
+      OPTIMIST_BP_WORKER_WS_HOST: process.env.OPTIMIST_BP_WORKER_WS_HOST,
+      GAS_ESTIMATE_ENDPOINT: process.env.GAS_ESTIMATE_ENDPOINT,
     },
     secretVars: [
       {
@@ -792,6 +793,7 @@ const clientAppAttr = {
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
       CLIENT_AUX_WORKER_URL: `https://${process.env.CLIENT_AUX_WORKER_HOST}`,
+      CLIENT_BP_WORKER_URL: `https://${process.env.CLIENT_BP_WORKER_HOST}`,
     },
     secretVars: [
       {

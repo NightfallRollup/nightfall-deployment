@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=3215c63840feb6aaa19bc8ffa539aff940d30925
+NIGHTFALL_BRANCH=a44658ca5cc1c74590fa1ec0fb38275aee6569fa
 OVERWRITE_CODE=y
 
 ### RELEASES

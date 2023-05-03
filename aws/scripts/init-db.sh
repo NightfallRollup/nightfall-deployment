@@ -59,6 +59,7 @@ for i in `seq 1 1 ${CLIENT_N}`; do
    --quiet \
    --eval "db.getMongo().use(\"${DB_NAME}\");\
      db.${TRANSACTIONS_COLLECTION}.createIndex({transactionHash:1});\
+     db.${TRANSACTIONS_COLLECTION}.createIndex({blockNumberL2:1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockNumberL2:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockHash:-1});\
      db.${SUBMITTED_BLOCKS_COLLECTION}.createIndex({blockNumber:-1});\
