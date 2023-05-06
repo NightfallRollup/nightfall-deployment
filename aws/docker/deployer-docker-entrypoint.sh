@@ -3,6 +3,7 @@ set -o errexit
 set -o pipefail
 
 while ! nc -z ${BLOCKCHAIN_WS_HOST} 80; do sleep 3; done
+while ! nc -z ${CIRCOM_WORKER_HOST} 80; do sleep 3; done
 
 if [[ "${SKIP_DEPLOYMENT}" != "true" && "${PARALLEL_SETUP}" == "false" ]]; then
   echo "PARALLEL SETUP DISABLED...."

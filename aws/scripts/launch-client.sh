@@ -43,9 +43,16 @@ init_tmux(){
   tmux new -d -s ${CLIENT_SESSION}
   tmux split-window -h
   tmux select-pane -t 0
+  tmux split-window -v
+  tmux select-pane -t 2
+  tmux split-window -v
+  tmux split-window -v
 
   init_pane ${WORKER_PANE}
   init_pane ${CLIENT_PANE}
+  init_pane ${CLIENT_BPW_PANE}
+  init_pane ${CLIENT_TXW_PANE}
+  init_pane ${CLIENT_XW_PANE}
 }
 
 CLIENT_SESSION=${RELEASE}-client
@@ -124,14 +131,25 @@ CLIENT_PROCESS_ID=$(docker ps | grep nightfall-client | awk '{print $1}' || true
 if [ "${CLIENT_PROCESS_ID}" ]; then
   docker stop "${CLIENT_PROCESS_ID}"
 fi
-USER_PROCESS_ID=$(docker ps | grep nightfall-user | awk '{print $1}' || true)
-if [ "${USER_PROCESS_ID}" ]; then
-  docker stop "${USER_PROCESS_ID}"
+CLIENT_TXW_PROCESS_ID=$(docker ps | grep nightfall-client_txw | awk '{print $1}' || true)
+if [ "${CLIENT_TXW_PROCESS_ID}" ]; then
+  docker stop "${CLIENT_TXW_PROCESS_ID}"
+fi
+CLIENT_BPW_PROCESS_ID=$(docker ps | grep nightfall-client_bpw | awk '{print $1}' || true)
+if [ "${CLIENT_BPW_PROCESS_ID}" ]; then
+  docker stop "${CLIENT_BPW_PROCESS_ID}"
+fi
+CLIENT_AUXW_PROCESS_ID=$(docker ps | grep nightfall-client_auxw | awk '{print $1}' || true)
+if [ "${CLIENT_AUXW_PROCESS_ID}" ]; then
+  docker stop "${CLIENT_AUXW_PROCESS_ID}"
 fi
 
 echo "Init tmux session...."
 WORKER_PANE=0
 CLIENT_PANE=1
+CLIENT_BPW_PANE=2
+CLIENT_TXW_PANE=3
+CLIENT_AUXW_PANE=4
 init_tmux 
 
 VOLUMES=${PWD}/../volumes/${RELEASE}
@@ -191,6 +209,113 @@ tmux send-keys -t ${WORKER_PANE} "docker run --rm -d \
 tmux send-keys -t ${WORKER_PANE} "docker logs -f mongodb &" Enter
 tmux send-keys -t ${WORKER_PANE} "docker logs -f worker" Enter
 
+echo "Launching client aux worker..."
+while true; do
+  WORKER=$(docker inspect worker | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  MONGO_IP=$(docker inspect mongodb | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  if [[ ("${WORKER}") && ("${MONGO_IP}") ]]; then
+    echo "Launching client_aux container Release: ${RELEASE}..."
+    tmux send-keys -t ${CLIENT_AUXW_PANE} "docker run --rm -d \
+         --name client-bpw \
+         -v ${VOLUMES}/build:/app/build \
+         -p 3020:80 \
+         -e MONGO_URL=mongodb://${MONGO_IP}:27017 \
+         -e LOG_LEVEL=debug \
+         -e LAUNCH_LOCAL=1 \
+         -e BLOCKCHAIN_WS_HOST=${BLOCKCHAIN_WS_HOST} \
+         -e BLOCKCHAIN_PORT=${BLOCKCHAIN_PORT} \
+         -e CIRCOM_WORKER_HOST=${WORKER} \
+         -e OPTIMIST_HOST=${OPTIMIST_HTTP_HOST} \
+         -e AUTOSTART_RETRIES=${AUTOSTART_RETRIES} \
+         -e BLOCKCHAIN_URL=wss://${BLOCKCHAIN_WS_HOST}${BLOCKCHAIN_PATH} \
+         -e STATE_GENESIS_BLOCK=${STATE_GENESIS_BLOCK} \
+         -e ETH_ADDRESS=${DEPLOYER_ADDRESS} \
+         -e GAS_PRICE=${GAS_PRICE} \
+         -e GAS=${GAS_USER} \
+         -e HASH_TYPE=${process.env.NIGHTFALL_HASH_TYPE},
+         -e ENABLE_QUEUE=${ENABLE_QUEUE} \
+         -e PERFORMANCE_BENCHMARK_ENABLE=${PERFORMANCE_BENCHMARK_ENABLE} \
+         -e CONFIRMATIONS=${BLOCKCHAIN_CONFIRMATIONS} \
+         -e CLIENT_AUX_WORKER_COUNT=2 \
+         ${ECR_REPO}/nightfall-client_auxw:${RELEASE}" Enter
+    tmux send-keys -t ${CLIENT_AUXW_PANE} "docker logs -f client-auxw" Enter
+    break;
+  fi
+  sleep 4
+done
+
+echo "Launching client bp worker..."
+while true; do
+  WORKER=$(docker inspect worker | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  MONGO_IP=$(docker inspect mongodb | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  CLIENT_AUX_IP=$(docker inspect client-auxw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  if [[ ("${WORKER}") && ("${MONGO_IP}") ]]; then
+    echo "Launching client_bpw container Release: ${RELEASE}..."
+    tmux send-keys -t ${CLIENT_BPW_PANE} "docker run --rm -d \
+         --name client-bpw \
+         -v ${VOLUMES}/build:/app/build \
+         -p 3020:80 \
+         -e MONGO_URL=mongodb://${MONGO_IP}:27017 \
+         -e LOG_LEVEL=debug \
+         -e LAUNCH_LOCAL=1 \
+         -e BLOCKCHAIN_WS_HOST=${BLOCKCHAIN_WS_HOST} \
+         -e BLOCKCHAIN_PORT=${BLOCKCHAIN_PORT} \
+         -e CIRCOM_WORKER_HOST=${WORKER} \
+         -e OPTIMIST_HOST=${OPTIMIST_HTTP_HOST} \
+         -e AUTOSTART_RETRIES=${AUTOSTART_RETRIES} \
+         -e BLOCKCHAIN_URL=wss://${BLOCKCHAIN_WS_HOST}${BLOCKCHAIN_PATH} \
+         -e STATE_GENESIS_BLOCK=${STATE_GENESIS_BLOCK} \
+         -e ETH_ADDRESS=${DEPLOYER_ADDRESS} \
+         -e GAS_PRICE=${GAS_PRICE} \
+         -e GAS=${GAS_USER} \
+         -e ENABLE_QUEUE=${ENABLE_QUEUE} \
+         -e HASH_TYPE=${process.env.NIGHTFALL_HASH_TYPE},
+         -e PERFORMANCE_BENCHMARK_ENABLE=${PERFORMANCE_BENCHMARK_ENABLE} \
+         -e CONFIRMATIONS=${BLOCKCHAIN_CONFIRMATIONS} \
+         -e CLIENT_AUX_WORKER_URL=${CLIENT_AUX_IP} \
+         ${ECR_REPO}/nightfall-client_bpw:${RELEASE}" Enter
+    tmux send-keys -t ${CLIENT_BPW_PANE} "docker logs -f client-bpw" Enter
+    break;
+  fi
+  sleep 4
+done
+
+echo "Launching client tx worker..."
+while true; do
+  WORKER=$(docker inspect worker | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  MONGO_IP=$(docker inspect mongodb | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  CLIENT_IP=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+  if [[ ("${WORKER}") && ("${MONGO_IP}") ]]; then
+    echo "Launching client_txw container Release: ${RELEASE}..."
+    tmux send-keys -t ${CLIENT_TXW_PANE} "docker run --rm -d \
+         --name client-txw \
+         -v ${VOLUMES}/build:/app/build \
+         -p 3010:80 \
+         -e MONGO_URL=mongodb://${MONGO_IP}:27017 \
+         -e LOG_LEVEL=debug \
+         -e LAUNCH_LOCAL=1 \
+         -e BLOCKCHAIN_WS_HOST=${BLOCKCHAIN_WS_HOST} \
+         -e BLOCKCHAIN_PORT=${BLOCKCHAIN_PORT} \
+         -e CIRCOM_WORKER_HOST=${WORKER} \
+         -e OPTIMIST_HOST=${OPTIMIST_HTTP_HOST} \
+         -e AUTOSTART_RETRIES=${AUTOSTART_RETRIES} \
+         -e BLOCKCHAIN_URL=wss://${BLOCKCHAIN_WS_HOST}${BLOCKCHAIN_PATH} \
+         -e STATE_GENESIS_BLOCK=${STATE_GENESIS_BLOCK} \
+         -e ETH_ADDRESS=${DEPLOYER_ADDRESS} \
+         -e GAS_PRICE=${GAS_PRICE} \
+         -e GAS=${GAS_USER} \
+         -e HASH_TYPE=${process.env.NIGHTFALL_HASH_TYPE},
+         -e ENABLE_QUEUE=${ENABLE_QUEUE} \
+         -e CLIENT_TX_WORKER_COUNT=2 \
+         -e CLIENT_URL=${CLIENT_IP} \
+         -e PERFORMANCE_BENCHMARK_ENABLE=${PERFORMANCE_BENCHMARK_ENABLE} \
+         ${ECR_REPO}/nightfall-client_txw:${RELEASE}" Enter
+    tmux send-keys -t ${CLIENT_TXW_PANE} "docker logs -f client-txw" Enter
+    break;
+  fi
+  sleep 4
+done
+
 echo "Launching client..."
 while true; do
   WORKER=$(docker inspect worker | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
@@ -213,7 +338,10 @@ while true; do
          -e ETH_ADDRESS=${DEPLOYER_ADDRESS} \
          -e GAS_PRICE=${GAS_PRICE} \
          -e GAS=${GAS_USER} \
+         -e HASH_TYPE=${process.env.NIGHTFALL_HASH_TYPE},
          -e ENABLE_QUEUE=${ENABLE_QUEUE} \
+         -e CONFIRMATIONS=${BLOCKCHAIN_CONFIRMATIONS} \
+         -e PERFORMANCE_BENCHMARK_ENABLE=${PERFORMANCE_BENCHMARK_ENABLE} \
          ${ECR_REPO}/nightfall-client:${RELEASE}" Enter
     tmux send-keys -t ${CLIENT_PANE} "docker logs -f client" Enter
     break;

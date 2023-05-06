@@ -2,9 +2,16 @@
 
 # Use: make release <VAR_NAME1=value1> <VAR_NAME2=value2> ....
 
+
+# Specify NIGHTFALL REPO
+# EYBlockchain/nightfall_3
+# NightfallRollup/nightfall_3.5
+NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
+
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
-NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
+# NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
+NIGHTFALL_BRANCH=a44658ca5cc1c74590fa1ec0fb38275aee6569fa
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -73,7 +80,6 @@ ifneq ($(REGION),$(REGION_AWS))
 endif
 
 ECR_REPO=${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com
-NIGHTFALL_REPO=nightfall_3
 
 export USER_AWS=$(shell aws configure get aws_access_key_id)
 export RESERVED_ENV=$(shell aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT}/Reserved_Env" | jq '.Parameter.Value' | tr -d "\"" | tr -d " ")
@@ -98,6 +104,7 @@ deploy-infra:
 	@make start-db
 	@make stop-infra
 	cd scripts && RELEASE=${RELEASE} ./deploy-cdk.sh
+	@make stop-infra
 	@make start-infra
 
 # Uninstall Infrastructure (Cloudformation stacks)
@@ -109,6 +116,15 @@ destroy-infra:
     fi
 	cd scripts && RELEASE=${RELEASE} ./delete-dynamodb.sh
 	cd scripts && RELEASE=${RELEASE} ./delete-volumes.sh
+
+# Deploy EC2 deployer instance
+deploy-deployer:
+	@make cdk-context
+	cd scripts && RELEASE=${RELEASE} DEPLOYER_EC2=true ./deploy-cdk.sh
+
+destroy-deployer:
+	@make cdk-context
+	cd scripts && RELEASE=${RELEASE} DEPLOYER_EC2=true ./destroy-cdk.sh
 
 # Delete MongoDb
 delete-db:
@@ -138,6 +154,10 @@ init-db:
 # Stop MongoDb
 stop-db:
 	cd scripts && RELEASE=${RELEASE} ./stop-db.sh
+
+# upgrade MongoDb
+upgrade-db:
+	cd scripts && RELEASE=${RELEASE} INSTANCE_TYPE=${INSTANCE_TYPE} ./upgrade-db.sh
 
 launch-admin:
 	cd scripts && RELEASE=${RELEASE} ./launch-admin.sh
@@ -226,7 +246,7 @@ kill-test_contracts:
 # Mnemonic
 mnemonic:
 	cp test/client/client-command.mjs nightfall_3/cli/src
-	cd scripts && DELETE_DB=y RELEASE=${RELEASE} CLIENT_COMMAND=mnemonic MNEMONIC="${MNEMONIC}" ./client-command.sh
+	cd scripts && RELEASE=${RELEASE} CLIENT_COMMAND=mnemonic MNEMONIC="${MNEMONIC}" ./client-command.sh
 
 fund-accounts:
 	cp test/deployer/fund-accounts.mjs nightfall_3/cli/src
@@ -237,6 +257,15 @@ test-ping_pong:
 	mkdir -p nightfall_3/test/ping-pong-single
 	cp test/ping-pong/* nightfall_3/test/ping-pong-single
 	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=PING_PONG ./launch-test.sh
+
+test-load:
+	cp test/client/load.test.mjs nightfall_3/test/
+	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=LOAD ./launch-test.sh
+
+# Launch txw test
+test-opt_txw:
+	cp test/workers/tx-worker.test.mjs nightfall_3/test
+	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=OPT_TXW ./launch-test.sh
 
 test-rln:
 	mkdir -p nightfall_3/test/rln
@@ -255,10 +284,24 @@ launch-client:
 
 kill-client:
 	tmux kill-session -t ${RELEASE}-client || true
-	docker stop client worker mongodb
+	docker stop client client-bpw client-txw worker mongodb
 
 ssh-edge:
-	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=edge ./ssh-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=edge CDK_STACK=Apps ./ssh-ec2.sh
+
+ssh-deployer:
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer ./ssh-ec2.sh
+
+init-deployer:
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer SRC_FILE="../env/${RELEASE}.env ../env/aws.env" DST_FILE=/home/ubuntu/nightfall-deployment/aws/env ./scp-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer SRC_FILE=../aws/contexts/cdk.context.${RELEASE}.json DST_FILE=/home/ubuntu/nightfall-deployment/aws/aws/contexts ./scp-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer SRC_FILE=~/.aws/credentials DST_FILE=/home/ubuntu/.aws/credentials ./scp-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer COMMAND='ssh-keyscan -H github.com >> .ssh/known_hosts' ./ssh-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer COMMAND='cd /home/ubuntu/nightfall-deployment/aws/aws && npm i' ./ssh-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer TGT_EC2=y SRC_FILE=/home/ubuntu/.ssh/id_ed25519.pub DST_FILE=../aws/keys/id_ed25519.pub ./scp-ec2.sh
+	gh auth login --with-token < ./aws/keys/git-${RELEASE}.token
+	gh ssh-key add ./aws/keys/id_ed25519.pub --title "deployer-${RELEASE}"
+	
 
 lazy-optimist-enable:
 	curl -X POST ${URL}/challenger/enable -H 'Content-Type: application/json' -d '{"enable":true}'
@@ -272,12 +315,18 @@ deploy-wallet:
 deploy-wallet-local:
 	cd scripts && RELEASE=${RELEASE} ./deploy-wallet-local.sh
 
-# Build all images (client, optimist, proposer, challenger, publisher, liquidity_provider, adversary)
+# Build all images (client, optimist, proposer, challenger, publisher, adversary)
 build-all:
 	@make update-repo
 	@make build-client
+	@make build-client_txw
+	@make build-client_auxw
+	@make build-client_bpw
 	@make build-lazy_client
 	@make build-optimist
+	@make build-opt_txw
+	@make build-opt_bpw
+	@make build-opt_baw
 	@make build-proposer
 	@make build-worker
 	@make build-deployer
@@ -286,9 +335,8 @@ build-all:
 	@make build-dashboard
 	@make build-adversary
 	@make build-admin
-	#@make build-liquidity_provider
 
-# Push images to docker repo (client, optimist, proposer, challenger, publisher, liquidity_provider, adversary)
+# Push images to docker repo (client, optimist, proposer, challenger, publisher, adversary)
 push-all:
 	@make login-ecr
 	$(eval GIT_COMMIT=$(shell git rev-parse HEAD))
@@ -296,15 +344,20 @@ push-all:
 	@make push-image NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-opt_txw GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-opt_bpw GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-opt_baw GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-proposer GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-worker GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-deployer GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-challenger GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-adversary GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-admin GIT_COMMIT=${GIT_COMMIT}
-	#@make push-image NIGHTFALL_IMAGE=nightfall-liquidity_provider GIT_COMMIT=${GIT_COMMIT}
 
 # Build individual images
 build-client:
@@ -312,10 +365,40 @@ build-client:
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 
+build-client_txw:
+	@cp docker/docker-client-tx-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-tx-worker-entrypoint.sh
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make build-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT}
+
+build-client_auxw:
+	@cp docker/docker-client-aux-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-aux-worker-entrypoint.sh
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make build-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
+
+build-client_bpw:
+	@cp docker/docker-client-bp-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-bp-worker-entrypoint.sh
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make build-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT}
+
 build-optimist:
 	@cp docker/optimist-docker-entrypoint.sh nightfall_3/nightfall-optimist/docker-entrypoint.sh
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
+
+build-opt_txw:
+	@cp docker/docker-optimist-tx-submitted-worker-entrypoint.sh nightfall_3/nightfall-optimist/docker-tx-submitted-entrypoint.sh
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make build-image NIGHTFALL_IMAGE=nightfall-opt_txw GIT_COMMIT=${GIT_COMMIT}
+
+build-opt_bpw:
+	@cp docker/docker-optimist-block-proposed-worker-entrypoint.sh nightfall_3/nightfall-optimist/docker-block-proposed-entrypoint.sh
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make build-image NIGHTFALL_IMAGE=nightfall-opt_bpw GIT_COMMIT=${GIT_COMMIT}
+
+build-opt_baw:
+	@cp docker/docker-optimist-block-assembly-worker-entrypoint.sh nightfall_3/nightfall-optimist/docker-block-assembly-entrypoint.sh
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make build-image NIGHTFALL_IMAGE=nightfall-opt_baw GIT_COMMIT=${GIT_COMMIT}
 
 build-adversary:
 	@cp docker/adversary.Dockerfile nightfall_3/docker
@@ -341,17 +424,13 @@ build-proposer:
 build-worker:
 	make login-ecr
 	@make build-circom
+	@make build-rapidsnark
 	cp docker/worker.Dockerfile nightfall_3/docker/worker.Dockerfile
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-worker GIT_COMMIT=${GIT_COMMIT}
 
 build-deployer:
 	@cp docker/deployer-docker-entrypoint.sh nightfall_3/nightfall-deployer/entrypoint.sh
-	if [ "${OVERWRITE_CODE}" = "y" ]; then\
-	  cp tmp/deployer/2_deploy_upgradeable.js nightfall_3/nightfall-deployer/migrations/; \
-	  cp tmp/deployer/3_test_tokens_migration.js nightfall_3/nightfall-deployer/migrations/; \
-	  cp tmp/deployer/index.mjs nightfall_3/nightfall-deployer/src; \
-	fi
 	$(eval CHALLENGE_PERIOD_AMOUNT=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export CHALLENGE_PERIOD_AMOUNT=//p'))
 	$(eval CHALLENGE_PERIOD_UNIT=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export CHALLENGE_PERIOD_UNIT=//p'))
 	perl -i -pe's#CHALLENGE_PERIOD.*#CHALLENGE_PERIOD = ${CHALLENGE_PERIOD_AMOUNT} ${CHALLENGE_PERIOD_UNIT};#g' nightfall_3/nightfall-deployer/contracts/Config.sol
@@ -379,10 +458,6 @@ build-dashboard:
 	$(eval GIT_COMMIT=$(shell git rev-parse HEAD))
 	@make build-service-image SERVICE=dashboard NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
 
-build-liquidity_provider:
-	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
-	@make build-image NIGHTFALL_IMAGE=nightfall-liquidity_provider GIT_COMMIT=${GIT_COMMIT}
-
 build-geth:
 	cp nightfall_3/config/default.js services/geth/config
 	cd services/geth && docker build -f geth.Dockerfile . -t ${ECR_REPO}/geth:${RELEASE}
@@ -390,16 +465,49 @@ build-geth:
 build-circom:
 	cd nightfall_3 && docker build -f docker/circom.Dockerfile . -t nightfall-circom:latest
 
+build-rapidsnark:
+	cd nightfall_3 && docker build -f docker/rapidsnark.Dockerfile . -t nightfall-rapidsnark:latest
+
 # Push individual images to ECR
 push-client:
 	@make login-ecr
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 
+push-client_txw:
+	@make login-ecr
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT}
+
+push-client_auxw:
+	@make login-ecr
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
+
+push-client_bpw:
+	@make login-ecr
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT}
+
 push-optimist:
 	@make login-ecr
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
+
+push-opt_txw:
+	@make login-ecr
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-opt_txw GIT_COMMIT=${GIT_COMMIT}
+
+push-opt_bpw:
+	@make login-ecr
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-opt_bpw GIT_COMMIT=${GIT_COMMIT}
+
+push-opt_baw:
+	@make login-ecr
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-opt_baw GIT_COMMIT=${GIT_COMMIT}
 
 push-admin:
 	@make login-ecr
@@ -446,11 +554,6 @@ push-dashboard:
 	$(eval GIT_COMMIT=$(shell git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
 
-push-liquidity_provider:
-	@make login-ecr
-	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
-	@make push-image NIGHTFALL_IMAGE=nightfall-liquidity_provider GIT_COMMIT=${GIT_COMMIT}
-
 push-geth:
 	@make login-ecr
 	@docker push ${ECR_REPO}/geth:${RELEASE}
@@ -458,17 +561,35 @@ push-geth:
 # Stop services
 stop-infra:
 	make stop-optimist
+	make stop-opt_txw
+	make stop-opt_bpw
+	make stop-opt_baw
 	make stop-proposer
 	make stop-publisher
 	make stop-dashboard
 	make stop-challenger
 	make stop-worker
 	make stop-client
+	make stop-client_txw
+	make stop-client_auxw
+	make stop-client_bpw
 	#make stop-geth
 
 stop-optimist:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh optimist${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./stop-service.sh optimist${INSTANCE_INDEX}
+
+stop-opt_txw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh opt_txw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh opttxw${INSTANCE_INDEX}
+
+stop-opt_bpw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh opt_bpw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh optbpw${INSTANCE_INDEX}
+
+stop-opt_baw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh opt_baw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh optbaw${INSTANCE_INDEX}
 
 stop-proposer:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh proposer${INSTANCE_INDEX}
@@ -498,9 +619,24 @@ stop-client:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./stop-service.sh client${INSTANCE_INDEX}
 
+stop-client_txw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client_txw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh clienttxw${INSTANCE_INDEX}
+
+stop-client_auxw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client_aux${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh clientaux${INSTANCE_INDEX}
+
+stop-client_bpw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client_bpw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh clientbpw${INSTANCE_INDEX}
+
 # Start services
 start-infra_all:
 	make start-optimist
+	make start-opt_txw
+	make start-opt_bpw
+	make start-opt_baw
 	make start-proposer
 	make start-publisher
 	make start-dashboard
@@ -513,6 +649,9 @@ start-infra_all:
 	@if [ "${CLIENT_N}" ]; then\
 	  make start-worker; \
 	  make start-client; \
+	  make start-client_txw; \
+	  make start-client_auxw; \
+	  make start-client_bpw; \
     else \
 	  echo "Client service is disabled"; \
     fi
@@ -522,6 +661,15 @@ start-infra:
 
 start-optimist:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh optimist${INSTANCE_INDEX}
+
+start-opt_txw:
+	cd scripts && RELEASE=${RELEASE} NEW_DESIRED_COUNT=${NEW_DESIRED_COUNT} ./start-service.sh opttxw${INSTANCE_INDEX}
+
+start-opt_bpw:
+	cd scripts && RELEASE=${RELEASE} ./start-service.sh optbpw${INSTANCE_INDEX}
+
+start-opt_baw:
+	cd scripts && RELEASE=${RELEASE} ./start-service.sh optbaw${INSTANCE_INDEX}
 
 start-proposer:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh proposer${INSTANCE_INDEX}
@@ -536,10 +684,19 @@ start-challenger:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh challenger${INSTANCE_INDEX}
 
 start-worker:
-	cd scripts && RELEASE=${RELEASE} ./start-service.sh circom${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} NEW_DESIRED_COUNT=${NEW_DESIRED_COUNT} ./start-service.sh circom${INSTANCE_INDEX}
 
 start-client:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh client${INSTANCE_INDEX}
+
+start-client_txw:
+	cd scripts && RELEASE=${RELEASE} NEW_DESIRED_COUNT=${NEW_DESIRED_COUNT} ./start-service.sh clienttxw${INSTANCE_INDEX}
+
+start-client_auxw:
+	cd scripts && RELEASE=${RELEASE} NEW_DESIRED_COUNT=${NEW_DESIRED_COUNT} ./start-service.sh clientaux${INSTANCE_INDEX}
+
+start-client_bpw:
+	cd scripts && RELEASE=${RELEASE} ./start-service.sh clientbpw${INSTANCE_INDEX}
 
 start-geth:
 	@if [ "${DEPLOYER_ETH_NETWORK}" = "staging" ]; then\
@@ -559,6 +716,18 @@ restart-infra:
 restart-optimist:
 	make stop-optimist
 	make start-optimist
+
+restart-opt_txw:
+	make stop-opt_txw
+	make start-opt_txw
+
+restart-opt_bpw:
+	make stop-opt_bpw
+	make start-opt_bpw
+
+restart-opt_baw:
+	make stop-opt_baw
+	make start-opt_baw
 
 restart-proposer:
 	make stop-proposer
@@ -588,6 +757,18 @@ restart-client:
 	make stop-client
 	make start-client
 
+restart-client_txw:
+	make stop-client_txw
+	make start-client_txw
+
+restart-client_auxw:
+	make stop-client_auxw
+	make start-client_auxw
+
+restart-client_bpw:
+	make stop-client_bpw
+	make start-client_bpw
+
 restart-worker:
 	make stop-worker
 	make start-worker
@@ -596,6 +777,18 @@ restart-worker:
 status-optimist:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh optimist${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./status-task.sh optimist${INSTANCE_INDEX}
+
+status-opt_txw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh opttxw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh opt_txw${INSTANCE_INDEX}
+
+status-opt_bpw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh optbpw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh opt_bpw${INSTANCE_INDEX}
+
+status-opt_baw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh optbaw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh opt_baw${INSTANCE_INDEX}
 
 status-proposer:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh proposer${INSTANCE_INDEX}
@@ -613,6 +806,26 @@ status-dashboard:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh dashboard
 	cd scripts && RELEASE=${RELEASE} ./status-task.sh dashboard
 
+status-client:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh client${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh client${INSTANCE_INDEX}
+
+status-client_txw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh clienttxw${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh client_txw${INSTANCE_INDEX}
+
+status-client_auxw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh clientaux${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh client_aux${INSTANCE_INDEX}
+
+status-client_bpw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh clientbpw${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh client_bpw${INSTANCE_INDEX}
+
+status-worker:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh worker${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh worker${INSTANCE_INDEX}
+
 status-geth:
 	@if [ "${DEPLOYER_ETH_NETWORK}" = "staging" ]; then\
 	  cd scripts && RELEASE=${RELEASE} ./status-service.sh geth; \
@@ -624,6 +837,15 @@ status-geth:
 # Exec into containers
 exec-optimist:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh optimist${INSTANCE_INDEX}Container
+
+exec-opt_txw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh opt_txw${INSTANCE_INDEX}Container
+
+exec-opt_bpw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh opt_bpw${INSTANCE_INDEX}Container
+
+exec-opt_baw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh opt_baw${INSTANCE_INDEX}Container
 
 exec-proposer:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh proposer${INSTANCE_INDEX}Container
@@ -637,9 +859,6 @@ exec-publisher:
 exec-dashboard:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh dashboardContainer
 
-exec-liquidity_provider:
-	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh liquidityContainer
-
 exec-geth:
 	@if [ "${DEPLOYER_ETH_NETWORK}" = "staging" ]; then\
 	  cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh geth; \
@@ -648,10 +867,19 @@ exec-geth:
     fi
 
 exec-worker:
-	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh circom${INSTANCE_INDEX}Container
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh circomWorker${INSTANCE_INDEX}Container
 
 exec-client:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client${INSTANCE_INDEX}Container
+
+exec-client_txw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client_txw${INSTANCE_INDEX}Container
+
+exec-client_auxw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client_auxw${INSTANCE_INDEX}Container
+
+exec-client_bpw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client_bpw${INSTANCE_INDEX}Container
 
 build-image:
 	echo "Building ${NIGHTFALL_IMAGE} git commit ${GIT_COMMIT} release: ${RELEASE}....";\
@@ -682,13 +910,13 @@ login-ecr:
 
 # Download Nightfall repo
 update-repo:
-	@test -e "${NIGHTFALL_REPO}" || git clone git@github.com:EYBlockchain/${NIGHTFALL_REPO}.git
-	@cd ${NIGHTFALL_REPO} && git stash
+	@test -e "nightfall_3" || git clone git@github.com:${NIGHTFALL_REPO}.git nightfall_3
+	cd nightfall_3 && git stash
 	@if [ "${NIGHTFALL_BRANCH}" ]; then\
-       	cd ${NIGHTFALL_REPO} && git fetch --all && git checkout master && git pull && git checkout ${NIGHTFALL_BRANCH}; \
+       	cd nightfall_3 && git fetch --all && git checkout master && git pull && git checkout ${NIGHTFALL_BRANCH}; \
     fi
-	cd ${NIGHTFALL_REPO} && npm i
-	cd ${NIGHTFALL_REPO}/cli && npm i
+	cd nightfall_3 && npm i
+	cd nightfall_3/cli && npm i
 
 # Check EFS is correctly mounted.
 check-efs:
@@ -774,9 +1002,10 @@ copy-files:
 	cp docker/challenger.Dockerfile nightfall_3/docker
 	cp docker/admin-docker-entrypoint.sh nightfall_3/nightfall-administrator/docker-entrypoint.sh
 	cp docker/proposer-docker-entrypoint.sh nightfall_3/apps/proposer/docker-entrypoint.sh
-	cp tmp/deployer/2_deploy_upgradeable.js nightfall_3/nightfall-deployer/migrations
-	cp tmp/deployer/3_test_tokens_migration.js nightfall_3/nightfall-deployer/migrations
-	cp tmp/deployer/index.mjs nightfall_3/nightfall-deployer/src
+	cp tmp/workers/debug.mjs nightfall_3/nightfall-optimist/src/routes/
+	cp tmp/workers/transaction-submitted-app.mjs nightfall_3/nightfall-optimist/src/workers
+	cp tmp/workers/transaction-submitted.mjs nightfall_3/nightfall-optimist/src/event-handlers/
+	cp tmp/workers/database.mjs nightfall_3/nightfall-optimist/src/services/
 
 
 # Clean containers

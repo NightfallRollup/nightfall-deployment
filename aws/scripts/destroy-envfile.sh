@@ -21,3 +21,10 @@ if [ -f "${ENV_FILE}" ]; then
   echo "Deleting Env File ${ENV_FILE}..."
   rm -f ${ENV_FILE}
 fi
+
+GIT_TOKEN_FILE=../aws/git-${ENV_NAME,,}.token
+
+if [ -f "${GIT_TOKEN_FILE}" ]; then
+  echo "Deleting Git token file ${GIT_TOKEN_FILE}..."
+  rm -f ${GIT_TOKEN_FILE}
+fi

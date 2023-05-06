@@ -50,9 +50,9 @@ cd tmp
 git clone https://github.com/OpenVPN/easy-rsa.git
 cd easy-rsa/easyrsa3
 ./easyrsa init-pki
-./easyrsa build-ca nopass
-./easyrsa build-server-full server nopass
-./easyrsa build-client-full client1.domain.tld nopass
+./easyrsa --batch build-ca nopass
+./easyrsa --batch build-server-full server nopass
+./easyrsa --batch build-client-full client1.domain.tld nopass
 CERTIFICATE_FOLDER=../../certificates
 
 mkdir -p $CERTIFICATE_FOLDER

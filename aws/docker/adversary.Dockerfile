@@ -1,11 +1,10 @@
-FROM node:16.17-bullseye-slim
+FROM ubuntu:22.04
 
-# 'node-gyp' requires 'python3', 'make' and 'g++''
-# entrypoint script requires 'netcat'
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-    python3 make g++ netcat-openbsd \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update -y
+RUN apt-get install -y netcat curl
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash -
+RUN apt-get install -y nodejs gcc g++ make
+
 EXPOSE 80 8080
 
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
@@ -27,5 +26,6 @@ RUN npm ci
 COPY common-files/classes node_modules/@polygon-nightfall/common-files/classes
 COPY common-files/utils node_modules/@polygon-nightfall/common-files/utils
 COPY common-files/constants node_modules/@polygon-nightfall/common-files/constants
+COPY common-files/dll node_modules/@polygon-nightfall/common-files/dll
 
 CMD ["npm", "start"]

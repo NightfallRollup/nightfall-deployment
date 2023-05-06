@@ -75,6 +75,9 @@ perl -i -pe "s#export S3_BUCKET_WALLET=.*#export S3_BUCKET_WALLET=s3://${S3_WALL
 perl -i -pe "s#export S3_BUCKET_DEPLOYER=.*#export S3_BUCKET_DEPLOYER=s3://${S3_DEPLOYER_BUCKET}-${ENV_NAME,,}#g" ${ENV_FILE}
 perl -i -pe "s#export S3_BUCKET_CLOUDFRONT=.*#export S3_BUCKET_CLOUDFRONT=s3://${S3_CLOUDFRONT_BUCKET}-${ENV_NAME,,}#g" ${ENV_FILE}
 
+# Create git token file
+echo ${GIT_TOKEN} > ../aws/keys/git-${ENV_NAME,,}.token
+
 for index in ${!subNetPrivateCidrBlocks[@]}; do
   index1=$(($index+1))
   subnetCidrBlock=${subNetPrivateCidrBlocks[$index]}

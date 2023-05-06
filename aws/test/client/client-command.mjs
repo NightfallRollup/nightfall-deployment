@@ -11,6 +11,7 @@ const {
   BLOCKCHAIN_WS_HOST,
   CLIENT_API_URL,
   CLIENT_COMMAND,
+  CLIENT_BP_WORKER_URL,
   MNEMONIC = '',
 } = process.env;
 
@@ -20,6 +21,7 @@ async function clientCommand() {
     optimistApiUrl: `https://${OPTIMIST_HTTP_HOST}`,
     optimistWsUrl: `wss://${OPTIMIST_HOST}`,
     clientApiUrl: CLIENT_API_URL,
+    clientApiBpUrl: CLIENT_BP_WORKER_URL,
   });
 
   if (CLIENT_COMMAND === 'mnemonic') {

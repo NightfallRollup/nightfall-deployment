@@ -91,5 +91,7 @@ fi
 CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
 if [ "${CLIENT}" ]; then
   CLIENT_URL=http://${CLIENT} 
+else
+  CLIENT_URL=https://${CLIENT_HOST} 
 fi
 DEPLOYER_ETH_NETWORK=${DEPLOYER_ETH_NETWORK} USER_ACCOUNTS=${USER_ACCOUNTS} _DEPLOYER_KEY=${DEPLOYER_KEY} CLIENT_URL=${CLIENT_URL} COMMAND=${COMMAND} TOKEN=${TOKEN} node ../nightfall_3/cli/src/fund-accounts.mjs

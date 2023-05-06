@@ -40,7 +40,7 @@ const s3 = require('aws-cdk-lib').aws_s3;
 const { Metric } = require('aws-cdk-lib').aws_cloudwatch;
 const { KeyPair } = require('cdk-ec2-key-pair');
 const fs = require('fs');
-const {updateEnvVars, findPriority} = require('./utils.js');
+const {updateEnvVars, findPriority, updateEcsCpus} = require('./utils.js');
 
 
 class ApplicationStack extends Stack {
@@ -306,7 +306,7 @@ class ApplicationStack extends Stack {
 
     for (const appAttr of appsAttr) {
       // Fargate Task
-      const { name, memoryLimitMiB, cpu, assignPublicIp = false, enable = true, nInstances = 1 } = appAttr;
+      const { name, memoryLimitMiB, cpu = 1, assignPublicIp = false, enable = true, nInstances = 1, desiredCount = 1 } = appAttr;
       // Skip task if disabled
       if (!enable) {
         // eslint-disable-next-line no-continue
@@ -318,10 +318,11 @@ class ApplicationStack extends Stack {
           instanceLabel = (instanceIndex+1).toString();
         }
 
+        const vcpus = updateEcsCpus(cpu);
         taskDefinition.push(
           new ecs.FargateTaskDefinition(this, `${envAttr.name}-${name}${instanceLabel}taskDef`, {
-            memoryLimitMiB,
-            cpu,
+            memoryLimitMiB: vcpus * 2,
+            cpu : vcpus,
             taskRole,
           }),
         );
@@ -567,7 +568,7 @@ class ApplicationStack extends Stack {
             taskDefinition: taskDefinition[taskDefinition.length - 1],
             // Public IP required so we can get the ECR or Docker image. If you have a NAT Gateway or ECR VPC Endpoints set this to false.
             assignPublicIp,
-            desiredCount: 1,
+            desiredCount,
             // TODO: for some reason, all private subnets are selected.
             vpcSubnets: appSubnets,
             securityGroups: [appSg[appSg.length - 1]],

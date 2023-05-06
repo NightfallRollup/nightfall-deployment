@@ -1,0 +1,89 @@
+Content-Type: multipart/mixed; boundary="//"
+MIME-Version: 1.0
+
+--//
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config.txt"
+
+#cloud-config
+cloud_final_modules:
+- [scripts-user, always]
+
+--//
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="userdata.txt"
+
+#!/bin/bash
+
+sudo -i -u ubuntu
+sudo apt-get update
+sudo apt-get install -y make md5deep jq \
+ nfs-common unzip build-essential
+
+wget -qO - https://www.mongodb.org/static/pgp/server-6.0.asc | sudo apt-key add -
+echo "deb [ arch=amd64,arm64 ] https://repo.mongodb.org/apt/ubuntu focal/mongodb-org/6.0 multiverse" | sudo tee /etc/apt/sources.list.d/mongodb-org-6.0.list
+sudo apt-get update
+sudo apt-get install -y mongodb-mongosh
+
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+rm awscliv2.zip 
+rm -rf aws/
+mkdir -p /home/ubuntu/.aws
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.aws
+
+curl "https://s3.amazonaws.com/session-manager-downloads/plugin/latest/ubuntu_64bit/session-manager-plugin.deb" -o "session-manager-plugin.deb"
+sudo dpkg -i session-manager-plugin.deb
+sudo rm -rf session-manager-plugin.deb
+
+curl -fsSL https://deb.nodesource.com/setup_16.x | sudo bash -
+sudo apt-get install -y nodejs 
+
+npm install -g aws-cdk
+
+sudo apt-get install -y \
+    ca-certificates \
+    curl \
+    gnupg
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch="$(dpkg --print-architecture)" signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  "$(. /etc/os-release && echo "$VERSION_CODENAME")" stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+VERSION_STRING=5:23.0.4-1~ubuntu.22.04~jammy
+sudo apt-get install -y docker-ce=$VERSION_STRING docker-ce-cli=$VERSION_STRING containerd.io docker-buildx-plugin docker-compose-plugin
+sudo usermod -aG docker ubuntu
+
+cd /home/ubuntu
+git clone https://github.com/NightfallRollup/nightfall-deployment.git
+sudo chown -R ubuntu:ubuntu nightfall-deployment/
+
+type -p curl >/dev/null || (sudo apt update && sudo apt install curl -y)
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+&& echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+&& sudo apt update \
+&& sudo apt install gh -y
+
+ssh-keygen -q -t ed25519 -N '' <<< $'\ny'
+sudo mv /root/.ssh/id_ed25519* /home/ubuntu/.ssh
+sudo chown -R ubuntu:ubuntu /home/ubuntu/.ssh
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+
+#mkdir -p /home/ubuntu/deployer
+#cd /home/ubuntu/deployer
+#tmux kill-session -t deployer
+
+#tmux new -d -s deployer
+
+#tmux send-keys -t 0 "./polygon-edge server --price-limit 0 --json-rpc-block-range-limit 0 --json-rpc-batch-request-limit 0  --data-dir ./test-chain-1 --chain genesis.json --grpc-address :${GPRC_PORT1} --libp2p :${LIBP2P_PORT1} --jsonrpc :${RPC_PORT1} --seal" Enter
+
