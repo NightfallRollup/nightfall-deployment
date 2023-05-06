@@ -25,20 +25,22 @@ function createS3Bucket() {
   bucketName=$1
   bucketStatus=$(aws s3 ls --region ${REGION} | grep $bucketName)
   if [ "${bucketStatus}" ]; then
-    echo "S3 bucket ${bucketName} already exists. Exiting..."
-    return
-  fi
-  
-  echo "Creating S3 bucket ${bucketName}..."
-  aws s3 mb s3://${bucketName} --region ${REGION} > /dev/null
-  sleep 2
-  bucketStatus=$(aws s3 ls | grep $bucketName)
-  if [ -z "${bucketStatus}" ]; then
-    echo "Couldn't create S3 bucket ${bucketName}..."
-    return
+    echo "S3 bucket ${bucketName} already exists"
+  else
+    echo "Creating S3 bucket ${bucketName}..."
+    aws s3 mb s3://${bucketName} --region ${REGION} > /dev/null
+    sleep 2
+    bucketStatus=$(aws s3 ls | grep $bucketName)
+    if [ -z "${bucketStatus}" ]; then
+      echo "Couldn't create S3 bucket ${bucketName}..."
+      return
+    fi
   fi
   
   echo "Setting public access to ${bucketName}..."
+  aws s3api put-public-access-block \
+     --bucket $bucketName  \
+     --public-access-block-configuration BlockPublicAcls=false
   if [ ! -f ../aws/lib/policies/s3_bucket_public_policy.json ]; then
     echo "Couldnt find S3 bucket public policy at ../aws/lib/policies/s3_bucket_public_policy.json. Exiting..."
     return

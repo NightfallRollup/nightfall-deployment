@@ -20,6 +20,7 @@ Installation has been tested with an Ubuntu 22.04.1 LTS machine
 - tmux
 - md5deep
 - wget
+- gh
 - Valid AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env variables from AWS credentials
 
 ## Installation
@@ -38,6 +39,7 @@ Copy file `env/aws.copy.env` to `env/aws.env` and update the following parameter
 - S3_CLOUDFRONT_BUCKET: Name for S3 bucket to deploy browser wallet. Bucket will be created
 - HOSTED_ZONE_ID: AWS Route 52 Hosted Zone ID. Needs to exist in advance
 - ETHERSCAN_API_KEY: API Key required to estimate gas
+- GIT_TOKEN: git Personal Access Token that gives access to nf private repo as well as ssh keys management
 
 ```
 # AWS ACCOUNT ID - ex: 941343234754
@@ -58,6 +60,7 @@ export HOSTED_ZONE_ID=
 # Ex - VR314WT78FTY76QE6IGRE45WNYUJN3458
 export ETHERSCAN_API_KEY=
 
+export GIT_TOKEN=ghp_LqIaPqIWERGed5345FGNgdg763dhfdgWg9
 ```
 
 ## Secrets
@@ -225,6 +228,36 @@ cd ../..
 RELEASE=xxx make build-geth push-geth
 ```
 
+## Spining EC2 instance to act as deployer
+Optionally, one can create an EC2 instance to deploy Nightfall instead of doing it from local computer.
+To spin the EC2 instance, follow this process:
+1. Deploy EC2 instance
+```
+RELEASE=xxx make deploy-deployer
+```
+
+2. Initialize EC2 instance
+EC2 instance requires some initialization:
+- Environment files `aws.env` and `xxx.env` are copied
+- AWS credentials
+- SSH key generation in EC2 instance
+- Add SSH from EC2 instance to github
+```
+RELEASE=xxx make init-deployer
+```
+**NOTE** This operation requires VPN.
+
+3. ssh into EC2 instance
+```
+RELEASE=xxx make ssh-deployer
+```
+**NOTE** This operation requires VPN.
+4. Destroy EC2 instance
+```
+RELEASE=xxx make destroy-deployer
+```
+
+**NOTE** This operation requires VPN.
 ## Deploying Nightfall to the newly created environment
 1. Export AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY env variables from AWS credentials. You can also set them by typing
 ```

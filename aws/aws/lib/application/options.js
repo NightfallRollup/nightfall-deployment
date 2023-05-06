@@ -1075,6 +1075,23 @@ const appsAttr = [
   clientBpWorkerAppAttr,
 ];
 
+const deployerAttr = {
+  enable: process.env.DEPLOYER_EC2 === 'true',
+  healthcheck: {
+    healthyHttpCodes: '200-499',
+  },
+  deployInstance: true,
+  //connectTo: 'external',
+  properties: {
+     name: 'deployer',
+     targetType: 'instance',
+     instanceType: 't2.medium',
+     instanceImage: '/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id',
+     userDataScript: 'deployer-user-data.txt',
+     volumeSize: 50,
+     sgPorts: [22],
+  },
+};
 const edgeAttr = {
   hostname: process.env.BLOCKCHAIN_SERVICE,
   enable: process.env.DEPLOYER_ETH_NETWORK === 'staging_edge',
@@ -1297,4 +1314,5 @@ module.exports = {
   ec2InstancesAttr,
   wafAttr,
   metricsAttr,
+  deployerAttr,
 };

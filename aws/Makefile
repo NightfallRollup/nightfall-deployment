@@ -117,6 +117,15 @@ destroy-infra:
 	cd scripts && RELEASE=${RELEASE} ./delete-dynamodb.sh
 	cd scripts && RELEASE=${RELEASE} ./delete-volumes.sh
 
+# Deploy EC2 deployer instance
+deploy-deployer:
+	@make cdk-context
+	cd scripts && RELEASE=${RELEASE} DEPLOYER_EC2=true ./deploy-cdk.sh
+
+destroy-deployer:
+	@make cdk-context
+	cd scripts && RELEASE=${RELEASE} DEPLOYER_EC2=true ./destroy-cdk.sh
+
 # Delete MongoDb
 delete-db:
 	cd scripts && RELEASE=${RELEASE} ./delete-db.sh
@@ -278,7 +287,21 @@ kill-client:
 	docker stop client client-bpw client-txw worker mongodb
 
 ssh-edge:
-	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=edge ./ssh-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=edge CDK_STACK=Apps ./ssh-ec2.sh
+
+ssh-deployer:
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer ./ssh-ec2.sh
+
+init-deployer:
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer SRC_FILE="../env/${RELEASE}.env ../env/aws.env" DST_FILE=/home/ubuntu/nightfall-deployment/aws/env ./scp-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer SRC_FILE=../aws/contexts/cdk.context.${RELEASE}.json DST_FILE=/home/ubuntu/nightfall-deployment/aws/aws/contexts ./scp-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer SRC_FILE=~/.aws/credentials DST_FILE=/home/ubuntu/.aws/credentials ./scp-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer COMMAND='ssh-keyscan -H github.com >> .ssh/known_hosts' ./ssh-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer COMMAND='cd /home/ubuntu/nightfall-deployment/aws/aws && npm i' ./ssh-ec2.sh
+	cd scripts && RELEASE=${RELEASE} INSTANCE_NAME=deployer CDK_STACK=Deployer TGT_EC2=y SRC_FILE=/home/ubuntu/.ssh/id_ed25519.pub DST_FILE=../aws/keys/id_ed25519.pub ./scp-ec2.sh
+	gh auth login --with-token < ./aws/keys/git-${RELEASE}.token
+	gh ssh-key add ./aws/keys/id_ed25519.pub --title "deployer-${RELEASE}"
+	
 
 lazy-optimist-enable:
 	curl -X POST ${URL}/challenger/enable -H 'Content-Type: application/json' -d '{"enable":true}'

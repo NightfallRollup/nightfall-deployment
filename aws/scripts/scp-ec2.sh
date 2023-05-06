@@ -1,9 +1,9 @@
 #! /bin/bash
 
-#  ssh to EC2 instance 
+#  scp to EC2 instance 
 
 #  Usage
-#  AWS_ACCESS_KEY_ID=<xxxx> AWS_SECRET_ACCESS_KEY=<xxxxxxxxxx> RELEASE=<xxxx> INSTANCE_NAME=<xxx> ./ssh-ec2.sh
+#  AWS_ACCESS_KEY_ID=<xxxx> AWS_SECRET_ACCESS_KEY=<xxxxxxxxxx> RELEASE=<xxxx> INSTANCE_NAME=<xxx> SRC_FILE=<xxx> DST_FILE=<xxx> ./scp-ec2.sh
 #
 
 set -e
@@ -29,6 +29,16 @@ if [ -z !${INSTANCE_NAME} ]; then
   exit 1
 fi
 
+if [ -z "${SRC_FILE}" ]; then
+  echo "Empty Source file. Exiting..."
+  exit 1
+fi
+
+if [ -z "${DST_FILE}" ]; then
+  echo "Empty Destination file. Exiting..."
+  exit 1
+fi
+
 rm -f ../aws/keys/${ENVIRONMENT_NAME}-${INSTANCE_NAME}-key.pem
 mkdir -p ../aws/keys
 aws secretsmanager get-secret-value \
@@ -41,6 +51,10 @@ instanceIp=$(aws ec2 describe-instances \
  | jq ".Reservations[].Instances[] | select(.Tags[].Value==\"${ENVIRONMENT_NAME}-${CDK_STACK}/EC2Instance-${INSTANCE_NAME}\") | .NetworkInterfaces[].PrivateIpAddress" \
  | tr -d '"')
 
-ssh -i ../aws/keys/${ENVIRONMENT_NAME}-${INSTANCE_NAME}-key.pem ubuntu@${instanceIp} ${COMMAND}
+if [ -z "${TGT_EC2}" ]; then
+  scp -i ../aws/keys/${ENVIRONMENT_NAME}-${INSTANCE_NAME}-key.pem ${SRC_FILE} ubuntu@${instanceIp}:/${DST_FILE}
+else
+  scp -i ../aws/keys/${ENVIRONMENT_NAME}-${INSTANCE_NAME}-key.pem ubuntu@${instanceIp}:/${SRC_FILE} ${DST_FILE}
+fi  
 
 rm -f ../aws/keys/${ENVIRONMENT_NAME}-${INSTANCE_NAME}-key.pem
