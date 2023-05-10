@@ -52,7 +52,7 @@ rm -f ./output.txt
 set -e
 
 # Start Optimist TX Workers
-if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
+if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
   echo "Starting Optimist TX Workers service..."
   OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${OPTIMIST_TX_WORKER_N} ./status-service.sh opttxw)
   OPTIMIST_TXW_RUNNING=$(echo ${OPTIMIST_TXW_STATUS} | grep Running)
@@ -72,7 +72,7 @@ if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
 fi
 
 # Start Optimist BA Workers
-if [ "${OPTIMIST_N}" -gt 0 ]; then
+if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
   echo "Starting Optimist BA Workers service..."
   OPTIMIST_BAW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbaw)
   OPTIMIST_BAW_RUNNING=$(echo ${OPTIMIST_BAW_STATUS} | grep Running)
@@ -92,7 +92,7 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
 fi
 
 # Start Optimist BP Workers
-if [ "${OPTIMIST_N}" -gt 0 ]; then
+if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
   echo "Starting Optimist BP Workers service..."
   OPTIMIST_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbpw)
   OPTIMIST_BPW_RUNNING=$(echo ${OPTIMIST_BPW_STATUS} | grep Running)
@@ -115,7 +115,7 @@ fi
 # Start Optimist
 if [ "${OPTIMIST_N}" -gt 0 ]; then
   # Check opt txw are alive
-  if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ]; then
+  if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     while true; do
       echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
       OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
@@ -128,7 +128,7 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
   fi
 
   # Check opt bpw are alive
-  if [ "${OPTIMIST_N}" -gt 0 ]; then
+  if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     while true; do
       echo "Waiting for connection with ${OPTIMIST_BP_WORKER_HOST}..."
       OPTIMIST_BPW_RESPONSE=$(curl https://"${OPTIMIST_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
@@ -141,7 +141,7 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
   fi
 
   # Check opt baw are alive
-  if [ "${OPTIMIST_N}" -gt 0 ]; then
+  if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     while true; do
       echo "Waiting for connection with ${OPTIMIST_BA_WORKER_HOST}..."
       OPTIMIST_BAW_RESPONSE=$(curl https://"${OPTIMIST_BA_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
@@ -369,78 +369,90 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   echo "New ${CLIENT_STATUS}"
   
 
+  if [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     # Start Client Auxw Worker
-  echo "Starting client AUX service..."
-  CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./status-service.sh clientaux)
-  CLIENT_AUXW_RUNNING=$(echo ${CLIENT_AUXW_STATUS} | grep Running)
-  CLIENT_AUXW_DESIRED=$(echo ${CLIENT_AUXW_STATUS} | grep Desired)
-  CLIENT_AUXW_RUNNING_COUNT=$(echo ${CLIENT_AUXW_RUNNING: -1})
-  CLIENT_AUXW_DESIRED_COUNT=$(echo ${CLIENT_AUXW_DESIRED: -1})
+    echo "Starting client AUX service..."
+    CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./status-service.sh clientaux)
+    CLIENT_AUXW_RUNNING=$(echo ${CLIENT_AUXW_STATUS} | grep Running)
+    CLIENT_AUXW_DESIRED=$(echo ${CLIENT_AUXW_STATUS} | grep Desired)
+    CLIENT_AUXW_RUNNING_COUNT=$(echo ${CLIENT_AUXW_RUNNING: -1})
+    CLIENT_AUXW_DESIRED_COUNT=$(echo ${CLIENT_AUXW_DESIRED: -1})
+  
+    CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./start-service.sh clientaux)
+    echo "---- Client aux Status ----"
+    echo "New ${CLIENT_AUXW_STATUS}"
 
-  CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./start-service.sh clientaux)
-  echo "---- Client aux Status ----"
-  echo "New ${CLIENT_AUXW_STATUS}"
+    # Start Client BP Worker
+    echo "Starting client BP service..."
+    CLIENT_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh clientbpw)
+    CLIENT_BPW_RUNNING=$(echo ${CLIENT_BPW_STATUS} | grep Running)
+    CLIENT_BPW_DESIRED=$(echo ${CLIENT_BPW_STATUS} | grep Desired)
+    CLIENT_BPW_RUNNING_COUNT=$(echo ${CLIENT_BPW_RUNNING: -1})
+    CLIENT_BPW_DESIRED_COUNT=$(echo ${CLIENT_BPW_DESIRED: -1})
+  
+    #if [[  (-z ${CLIENT_BPW_STATUS}) || ("${CLIENT_BPW_DESIRED_COUNT}" != "0") || ("${CLIENT_BPW_RUNNING_COUNT}" != "0") ]]; then
+      #echo "Client BP worker service is running (and shouldnt). Running tasks : ${CLIENT_BPW_RUNNING_COUNT}. Desired tasks: ${CLIENT_BPW_DESIRED_COUNT}"
+      #echo "Run make-stop client first"
+      #exit 1
+    #fi
+  
+    CLIENT_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh clientbpw)
+    echo "---- Client bpw Status ----"
+    echo "New ${CLIENT_BPW_STATUS}"
 
-  # Start Client BP Worker
-  echo "Starting client BP service..."
-  CLIENT_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh clientbpw)
-  CLIENT_BPW_RUNNING=$(echo ${CLIENT_BPW_STATUS} | grep Running)
-  CLIENT_BPW_DESIRED=$(echo ${CLIENT_BPW_STATUS} | grep Desired)
-  CLIENT_BPW_RUNNING_COUNT=$(echo ${CLIENT_BPW_RUNNING: -1})
-  CLIENT_BPW_DESIRED_COUNT=$(echo ${CLIENT_BPW_DESIRED: -1})
+    # Start Client TX Worker
+    echo "Starting client TX service..."
+    CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./status-service.sh clienttxw)
+    CLIENT_TXW_RUNNING=$(echo ${CLIENT_TXW_STATUS} | grep Running)
+    CLIENT_TXW_DESIRED=$(echo ${CLIENT_TXW_STATUS} | grep Desired)
+    CLIENT_TXW_RUNNING_COUNT=$(echo ${CLIENT_TXW_RUNNING: -1})
+    CLIENT_TXW_DESIRED_COUNT=$(echo ${CLIENT_TXW_DESIRED: -1})
   
-  #if [[  (-z ${CLIENT_BPW_STATUS}) || ("${CLIENT_BPW_DESIRED_COUNT}" != "0") || ("${CLIENT_BPW_RUNNING_COUNT}" != "0") ]]; then
-    #echo "Client BP worker service is running (and shouldnt). Running tasks : ${CLIENT_BPW_RUNNING_COUNT}. Desired tasks: ${CLIENT_BPW_DESIRED_COUNT}"
-    #echo "Run make-stop client first"
-    #exit 1
-  #fi
+    #if [[  (-z ${CLIENT_TXW_STATUS}) || ("${CLIENT_TXW_DESIRED_COUNT}" != "0") || ("${CLIENT_TXW_RUNNING_COUNT}" != "0") ]]; then
+      #echo "Client TX worker service is running (and shouldnt). Running tasks : ${CLIENT_TXW_RUNNING_COUNT}. Desired tasks: ${CLIENT_TXW_DESIRED_COUNT}"
+      #echo "Run make-stop client first"
+      #exit 1
+    #fi
   
-  CLIENT_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh clientbpw)
-  echo "---- Client bpw Status ----"
-  echo "New ${CLIENT_BPW_STATUS}"
-  
-
-  # Start Client TX Worker
-  echo "Starting client TX service..."
-  CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./status-service.sh clienttxw)
-  CLIENT_TXW_RUNNING=$(echo ${CLIENT_TXW_STATUS} | grep Running)
-  CLIENT_TXW_DESIRED=$(echo ${CLIENT_TXW_STATUS} | grep Desired)
-  CLIENT_TXW_RUNNING_COUNT=$(echo ${CLIENT_TXW_RUNNING: -1})
-  CLIENT_TXW_DESIRED_COUNT=$(echo ${CLIENT_TXW_DESIRED: -1})
-  
-  #if [[  (-z ${CLIENT_TXW_STATUS}) || ("${CLIENT_TXW_DESIRED_COUNT}" != "0") || ("${CLIENT_TXW_RUNNING_COUNT}" != "0") ]]; then
-    #echo "Client TX worker service is running (and shouldnt). Running tasks : ${CLIENT_TXW_RUNNING_COUNT}. Desired tasks: ${CLIENT_TXW_DESIRED_COUNT}"
-    #echo "Run make-stop client first"
-    #exit 1
-  #fi
-  
-  CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./start-service.sh clienttxw)
-  echo "---- Client txw Status ----"
-  echo "New ${CLIENT_TXW_STATUS}"
+    CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./start-service.sh clienttxw)
+    echo "---- Client txw Status ----"
+    echo "New ${CLIENT_TXW_STATUS}"
 
       # Check client auxw is alive
-  while true; do
-    echo "Waiting for connection with ${CLIENT_AUX_WORKER_HOST}..."
-    CLIENT_AUXW_RESPONSE=$(curl https://"${CLIENT_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-    if [ "${CLIENT_AUXW_RESPONSE}" ]; then
-      echo "Connected to ${CLIENT_AUX_WORKER_HOST}..."
-	    break
-    fi
-    sleep 10
-  done
+    while true; do
+      echo "Waiting for connection with ${CLIENT_AUX_WORKER_HOST}..."
+      CLIENT_AUXW_RESPONSE=$(curl https://"${CLIENT_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${CLIENT_AUXW_RESPONSE}" ]; then
+        echo "Connected to ${CLIENT_AUX_WORKER_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
 
-    # Check client bpw is alive
-  while true; do
-    echo "Waiting for connection with ${CLIENT_BP_WORKER_HOST}..."
-    CLIENT_BPW_RESPONSE=$(curl https://"${CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-    if [ "${CLIENT_BPW_RESPONSE}" ]; then
-      echo "Connected to ${CLIENT_BP_WORKER_HOST}..."
-	    break
-    fi
-    sleep 10
-  done
+      # Check client bpw is alive
+    while true; do
+      echo "Waiting for connection with ${CLIENT_BP_WORKER_HOST}..."
+      CLIENT_BPW_RESPONSE=$(curl https://"${CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${CLIENT_BPW_RESPONSE}" ]; then
+        echo "Connected to ${CLIENT_BP_WORKER_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
 
-  # Check client is alive
+    # Check client txis alive
+    while true; do
+      echo "Waiting for connection with ${CLIENT_TX_WORKER_HOST}..."
+      CLIENT_TXW_RESPONSE=$(curl https://"${CLIENT_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${CLIENT_TXW_RESPONSE}" ]; then
+        echo "Connected to ${CLIENT_TX_WORKER_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
+  fi
+
+    # Check client is alive
   while true; do
     echo "Waiting for connection with ${CLIENT_HOST}..."
     CLIENT_RESPONSE=$(curl https://"${CLIENT_HOST}"/healthcheck 2> /dev/null | grep OK || true)
@@ -451,14 +463,4 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
     sleep 10
   done
   
-  # Check client txis alive
-  while true; do
-    echo "Waiting for connection with ${CLIENT_TX_WORKER_HOST}..."
-    CLIENT_TXW_RESPONSE=$(curl https://"${CLIENT_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-    if [ "${CLIENT_TXW_RESPONSE}" ]; then
-      echo "Connected to ${CLIENT_TX_WORKER_HOST}..."
-	    break
-    fi
-    sleep 10
-  done
 fi
