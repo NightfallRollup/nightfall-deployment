@@ -97,21 +97,30 @@ if [ -z "${CLIENT}" ]; then
 	  RELEASE=${RELEASE} ./stop-service.sh client
 	  RELEASE=${RELEASE} ./start-service.sh client
 
-	  RELEASE=${RELEASE} ./restart-task.sh client_txw
-	  RELEASE=${RELEASE} ./stop-service.sh clienttxw
-	  RELEASE=${RELEASE} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER} ./start-service.sh clienttxw
+    if [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+	    RELEASE=${RELEASE} ./restart-task.sh client_txw
+	    RELEASE=${RELEASE} ./stop-service.sh clienttxw
+	    RELEASE=${RELEASE} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER} ./start-service.sh clienttxw
 
-	  RELEASE=${RELEASE} ./restart-task.sh client_bpw
-	  RELEASE=${RELEASE} ./stop-service.sh clientbpw
-	  RELEASE=${RELEASE} ./start-service.sh clientbpw
+	    RELEASE=${RELEASE} ./restart-task.sh client_bpw
+	    RELEASE=${RELEASE} ./stop-service.sh clientbpw
+	    RELEASE=${RELEASE} ./start-service.sh clientbpw
+    fi
   fi
   while true; do
     CLIENT1_CHECK=$(curl https://"${CLIENT_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
     CLIENT2_CHECK=$(curl https://"${CLIENT_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-    CLIENT1_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-    CLIENT2_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-    CLIENT1_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-    CLIENT2_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    if [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+      CLIENT1_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      CLIENT2_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      CLIENT1_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      CLIENT2_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    else
+      CLIENT1_TXW_CHECK=1
+      CLIENT2_TXW_CHECK=1
+      CLIENT1_BPW_CHECK=1
+      CLIENT2_BPW_CHECK=1
+    fi
     WORKER1_CHECK=$(curl https://"${CIRCOM_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
     WORKER2_CHECK=$(curl https://"${CIRCOM_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
     MONGO_CONNECTION_STRING="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_URL}:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"

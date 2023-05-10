@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=a44658ca5cc1c74590fa1ec0fb38275aee6569fa
+NIGHTFALL_BRANCH=c3f36d59db7dc0a69f0466100224613084fe3878
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -317,16 +317,19 @@ deploy-wallet-local:
 
 # Build all images (client, optimist, proposer, challenger, publisher, adversary)
 build-all:
+	$(eval NIGHTFALL_LEGACY=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export NIGHTFALL_LEGACY=//p'))
+	if [ "${NIGHTFALL_LEGACY}" != "true" ]; then\
+	  make build-client_txw; \
+	  make build-client_auxw; \
+	  make build-client_bpw; \
+	  make build-opt_txw; \
+	  make build-opt_bpw; \
+	  make build-opt_baw; \
+	fi
 	@make update-repo
 	@make build-client
-	@make build-client_txw
-	@make build-client_auxw
-	@make build-client_bpw
 	@make build-lazy_client
 	@make build-optimist
-	@make build-opt_txw
-	@make build-opt_bpw
-	@make build-opt_baw
 	@make build-proposer
 	@make build-worker
 	@make build-deployer
@@ -340,18 +343,21 @@ build-all:
 push-all:
 	@make login-ecr
 	$(eval GIT_COMMIT=$(shell git rev-parse HEAD))
+	$(eval NIGHTFALL_LEGACY=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export NIGHTFALL_LEGACY=//p'))
+	if [ "${NIGHTFALL_LEGACY}" != "true" ]; then\
+	  make push-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT} ; \
+	  make push-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT} ; \
+	  make push-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT} ; \
+	  make push-image NIGHTFALL_IMAGE=nightfall-opt_txw GIT_COMMIT=${GIT_COMMIT} ; \
+	  make push-image NIGHTFALL_IMAGE=nightfall-opt_bpw GIT_COMMIT=${GIT_COMMIT} ; \
+	  make push-image NIGHTFALL_IMAGE=nightfall-opt_baw GIT_COMMIT=${GIT_COMMIT} ; \
+	fi
 	@make push-image NIGHTFALL_IMAGE=nightfall-publisher GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-opt_txw GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-opt_bpw GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-opt_baw GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-proposer GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-worker GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-deployer GIT_COMMIT=${GIT_COMMIT}
