@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=c3f36d59db7dc0a69f0466100224613084fe3878
+NIGHTFALL_BRANCH=41f78220ab66cdd103817671fbdccb2ce5c3cc7e
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -324,6 +324,7 @@ deploy-wallet-local:
 # Build all images (client, optimist, proposer, challenger, publisher, adversary)
 build-all:
 	$(eval NIGHTFALL_LEGACY=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export NIGHTFALL_LEGACY=//p'))
+	@make update-repo
 	if [ "${NIGHTFALL_LEGACY}" != "true" ]; then\
 	  make build-client_txw; \
 	  make build-client_auxw; \
@@ -332,7 +333,6 @@ build-all:
 	  make build-opt_bpw; \
 	  make build-opt_baw; \
 	fi
-	@make update-repo
 	@make build-client
 	@make build-lazy_client
 	@make build-optimist
