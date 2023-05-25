@@ -32,7 +32,7 @@ set +o allexport
 CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
 CLIENT_BP_WORKER=$(docker inspect client-bpw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
 if [ -z "${CLIENT}" ]; then
-  CLIENT_API_URL=https://client.staging.polygon-nightfall.technology
+  CLIENT_API_URL=https://${CLIENT_HOST}
   CLIENT_BP_WORKER_URL=https://${CLIENT_BP_WORKER_HOST}
 else
   CLIENT_API_URL=http://${CLIENT}:80

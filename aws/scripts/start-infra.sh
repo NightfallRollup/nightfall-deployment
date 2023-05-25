@@ -464,3 +464,80 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   done
   
 fi
+
+## Regulator
+echo "Number of regulators deployed: ${REGULATOR_N}"
+if [[ ("${REGULATOR_N}") && ("${REGULATOR_N}" != "0") ]]; then
+  # Start Regulator
+  echo "Starting Regulator service..."
+  REGULATOR_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh regulator)
+  REGULATOR_RUNNING=$(echo ${REGULATOR_STATUS} | grep Running)
+  REGULATOR_DESIRED=$(echo ${REGULATOR_STATUS} | grep Desired)
+  REGULATOR_RUNNING_COUNT=$(echo ${REGULATOR_RUNNING: -1})
+  REGULATOR_DESIRED_COUNT=$(echo ${REGULATOR_DESIRED: -1})
+  
+  REGULATOR_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh regulator)
+  echo "---- Regulator Status ----"
+  echo "New ${REGULATOR_STATUS}"
+  
+
+  if [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+    # Start Regulator Auxw Worker
+    echo "Starting Regulator AUX service..."
+    REGULATOR_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${REGULATOR_AUX_WORKER_N} ./status-service.sh regaux)
+    REGULATOR_AUXW_RUNNING=$(echo ${REGULATOR_AUXW_STATUS} | grep Running)
+    REGULATOR_AUXW_DESIRED=$(echo ${REGULATOR_AUXW_STATUS} | grep Desired)
+    REGULATOR_AUXW_RUNNING_COUNT=$(echo ${REGULATOR_AUXW_RUNNING: -1})
+    REGULATOR_AUXW_DESIRED_COUNT=$(echo ${REGULATOR_AUXW_DESIRED: -1})
+  
+    REGULATOR_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${REGULATOR_AUX_WORKER_N} ./start-service.sh regaux)
+    echo "---- Regulator aux Status ----"
+    echo "New ${REGULATOR_AUXW_STATUS}"
+
+    # Start Regulator BP Worker
+    echo "Starting regulator BP service..."
+    REGULATOR_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh regbpw)
+    REGULATOR_BPW_RUNNING=$(echo ${REGULATOR_BPW_STATUS} | grep Running)
+    REGULATOR_BPW_DESIRED=$(echo ${REGULATOR_BPW_STATUS} | grep Desired)
+    REGULATOR_BPW_RUNNING_COUNT=$(echo ${REGULATOR_BPW_RUNNING: -1})
+    REGULATOR_BPW_DESIRED_COUNT=$(echo ${REGULATOR_BPW_DESIRED: -1})
+  
+    REGULATOR_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh regbpw)
+    echo "---- Client bpw Status ----"
+    echo "New ${REGULATOR_BPW_STATUS}"
+
+    # Check Regulator auxw is alive
+    while true; do
+      echo "Waiting for connection with ${REGULATOR_AUX_WORKER_HOST}..."
+      REGULATOR_AUXW_RESPONSE=$(curl https://"${REGULATOR_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${REGULATOR_AUXW_RESPONSE}" ]; then
+        echo "Connected to ${REGULATOR_AUX_WORKER_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
+
+    # Check regulator bpw is alive
+    while true; do
+      echo "Waiting for connection with ${REGULATOR_BP_WORKER_HOST}..."
+      REGULATOR_BPW_RESPONSE=$(curl https://"${REGULATOR_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      if [ "${REGULATOR_BPW_RESPONSE}" ]; then
+        echo "Connected to ${REGULATOR_BP_WORKER_HOST}..."
+	      break
+      fi
+      sleep 10
+    done
+  fi
+
+  # Check regulator is alive
+  while true; do
+    echo "Waiting for connection with ${REGULATOR_HOST}..."
+    REGULATOR_RESPONSE=$(curl https://"${REGULATOR_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    if [ "${REGULATOR_RESPONSE}" ]; then
+      echo "Connected to ${REGULATOR_HOST}..."
+	    break
+    fi
+    sleep 10
+  done
+  
+fi
