@@ -70,6 +70,12 @@ endif
 # Check if GETH or Local Geth are enabled
 export DEPLOYER_ETH_NETWORK=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export DEPLOYER_ETH_NETWORK=//p')
 
+# Check CLIENT_N
+export CLIENT_N=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export CLIENT_N=//p')
+
+# Check REGULATOR_N
+export REGULATOR_N=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export REGULATOR_N=//p')
+
 # Retrieve AWS Account ID
 export ACCOUNT_ID=$(shell cat env/aws.env | sed  -n -e 's/^export ACCOUNT_ID=//p')
 
@@ -579,6 +585,9 @@ stop-infra:
 	make stop-client_txw
 	make stop-client_auxw
 	make stop-client_bpw
+	make stop-regulator
+	make stop-regulator_auxw
+	make stop-regulator_bpw
 	#make stop-geth
 
 stop-optimist:
@@ -637,6 +646,18 @@ stop-client_bpw:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh client_bpw${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./stop-service.sh clientbpw${INSTANCE_INDEX}
 
+stop-regulator:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh regulator${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh regulator${INSTANCE_INDEX}
+
+stop-regulator_auxw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh reg_aux${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh regaux${INSTANCE_INDEX}
+
+stop-regulator_bpw:
+	cd scripts && RELEASE=${RELEASE} ./restart-task.sh reg_bpw${INSTANCE_INDEX}
+	cd scripts && RELEASE=${RELEASE} ./stop-service.sh regbpw${INSTANCE_INDEX}
+
 # Start services
 start-infra_all:
 	make start-optimist
@@ -652,7 +673,7 @@ start-infra_all:
 	else \
 	  echo "Local Geth service is disabled"; \
     fi
-	@if [ "${CLIENT_N}" ]; then\
+	@if [ "${CLIENT_N}" ] && [ "${CLIENT_N}" != "0" ]; then\
 	  make start-worker; \
 	  make start-client; \
 	  make start-client_txw; \
@@ -660,6 +681,13 @@ start-infra_all:
 	  make start-client_bpw; \
     else \
 	  echo "Client service is disabled"; \
+    fi
+	@if [ "${REGULATOR_N}" ] && [ "${REGULATOR_N}" != "0" ]; then\
+	  make start-regulator; \
+	  make start-reglator_auxw; \
+	  make start-regulator_bpw; \
+    else \
+	  echo "Regulator service is disabled"; \
     fi
 
 start-infra:
@@ -703,6 +731,15 @@ start-client_auxw:
 
 start-client_bpw:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh clientbpw${INSTANCE_INDEX}
+
+start-regulator:
+	cd scripts && RELEASE=${RELEASE} ./start-service.sh regulator${INSTANCE_INDEX}
+
+start-regulator_auxw:
+	cd scripts && RELEASE=${RELEASE} NEW_DESIRED_COUNT=${NEW_DESIRED_COUNT} ./start-service.sh regaux${INSTANCE_INDEX}
+
+start-regulator_bpw:
+	cd scripts && RELEASE=${RELEASE} ./start-service.sh regbpw${INSTANCE_INDEX}
 
 start-geth:
 	@if [ "${DEPLOYER_ETH_NETWORK}" = "staging" ]; then\
@@ -779,6 +816,18 @@ restart-worker:
 	make stop-worker
 	make start-worker
 
+restart-regulator:
+	make stop-regulator
+	make start-regulator
+
+restart-regulator_auxw:
+	make stop-regulator_auxw
+	make start-regulator_auxw
+
+restart-regulator_bpw:
+	make stop-regulator_bpw
+	make start-regulator_bpw
+
 # Get task status
 status-optimist:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh optimist${INSTANCE_INDEX}
@@ -831,6 +880,18 @@ status-client_bpw:
 status-worker:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh worker${INSTANCE_INDEX} 
 	cd scripts && RELEASE=${RELEASE} ./status-task.sh worker${INSTANCE_INDEX}
+
+status-regulator:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh regulator${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh regulator${INSTANCE_INDEX}
+
+status-regulator_auxw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh regaux${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh reg_aux${INSTANCE_INDEX}
+
+status-regulator_bpw:
+	cd scripts && RELEASE=${RELEASE} ./status-service.sh regbpw${INSTANCE_INDEX} 
+	cd scripts && RELEASE=${RELEASE} ./status-task.sh reg_bpw${INSTANCE_INDEX}
 
 status-geth:
 	@if [ "${DEPLOYER_ETH_NETWORK}" = "staging" ]; then\
@@ -886,6 +947,15 @@ exec-client_auxw:
 
 exec-client_bpw:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh client_bpw${INSTANCE_INDEX}Container
+
+exec-regulator:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh regulator${INSTANCE_INDEX}Container
+
+exec-regulator_auxw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh reg_auxw${INSTANCE_INDEX}Container
+
+exec-regulator_bpw:
+	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh reg_bpw${INSTANCE_INDEX}Container
 
 build-image:
 	echo "Building ${NIGHTFALL_IMAGE} git commit ${GIT_COMMIT} release: ${RELEASE}....";\

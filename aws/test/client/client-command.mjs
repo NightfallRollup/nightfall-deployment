@@ -29,6 +29,7 @@ async function clientCommand() {
     await nf3.init(mnemonic, 'client');
     console.log(`mnemonic: ${mnemonic}`);
     console.log(`Compressed Zkp Public Key: ${nf3.zkpKeys.compressedZkpPublicKey}`);
+    console.log(`Zkp Private Key: ${nf3.zkpKeys.zkpPrivateKey}`);
   } else {
     console.log(`Undefined command ${CLIENT_COMMAND}`);
   }

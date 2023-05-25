@@ -1058,6 +1058,251 @@ const clientBpWorkerAppAttr = {
   ],
 };
 
+const regulatorAppAttr = {
+  nInstances: process.env.REGULATOR_N,
+  // REQUIRED. Application/Task name
+  name: 'regulator',
+  assignPublicIp: process.env.REGULATOR_SERVICE_ALB === 'external',
+  enable: Number(process.env.REGULATOR_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.REGULATOR_PORT),
+        hostPort: Number(process.env.REGULATOR_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.REGULATOR_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+          unhealthyThresholdCount: 10,
+          healthyThresholdCount: 2,
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.REGULATOR_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.REGULATOR_AUTOSTART_RETRIES,
+      GAS: process.env.GAS_CLIENT,
+      LOG_LEVEL: process.env.REGULATOR_LOG_LEVEL,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.REGULATOR_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.REGULATOR_LOG_HTTP_FULL_DATA,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      MONGO_URL: process.env.MONGO_URL,
+      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      GAS_PRICE: process.env.GAS_PRICE,
+      STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
+      ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
+      DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
+      PROTOCOL: process.env.REGULATOR_PROTOCOL,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
+      COMMITMENTS_DB: process.env.REGULATOR_COMMITMENTS_DB,
+      ENVIRONMENT: 'aws',
+      ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+      CLIENT_AUX_WORKER_URL: `https://${process.env.REGULATOR_AUX_WORKER_HOST}`,
+      CLIENT_BP_WORKER_URL: `https://${process.env.REGULATOR_BP_WORKER_HOST}`,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+      {
+        envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
+        type: ['secureString'],
+        parameterName: ['regulator_zkp_private_key_ganache'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-client',
+    imageTag: process.env.RELEASE,
+  },
+  cpu: 1,
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const regulatorAuxWorkerAppAttr = {
+  nInstances: process.env.REGULATOR_N,
+  // REQUIRED. Application/Task name
+  name: 'reg_aux',
+  assignPublicIp: process.env.REGULATOR_AUX_WORKER_SERVICE_ALB === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.REGULATOR_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.REGULATOR_AUX_WORKER_PORT),
+        hostPort: Number(process.env.REGULATOR_AUX_WORKER_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.REGULATOR_AUX_WORKER_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+          unhealthyThresholdCount: 10,
+          healthyThresholdCount: 2,
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.REGULATOR_AUX_WORKER_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.REGULATOR_AUTOSTART_RETRIES,
+      GAS: process.env.GAS_CLIENT,
+      LOG_LEVEL: process.env.REGULATOR_LOG_LEVEL,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.REGULATOR_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.REGULATOR_LOG_HTTP_FULL_DATA,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      MONGO_URL: process.env.MONGO_URL,
+      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      GAS_PRICE: process.env.GAS_PRICE,
+      STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
+      ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
+      DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
+      PROTOCOL: process.env.REGULATOR_PROTOCOL,
+      COMMITMENTS_DB: process.env.REGULATOR_COMMITMENTS_DB,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
+      ENVIRONMENT: 'aws',
+      ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      CLIENT_AUX_WORKER_COUNT: process.env.REGULATOR_AUX_WORKER_CPU_COUNT,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+      {
+        envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
+        type: ['secureString'],
+        parameterName: ['regulator_zkp_private_key_ganache'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-client_auxw',
+    imageTag: process.env.RELEASE,
+  },
+  // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
+  cpu: process.env.REGULATOR_AUX_WORKER_CPU_COUNT ? Number(process.env.REGULATOR_AUX_WORKER_CPU_COUNT ) : 1,
+  desiredCount: Number(process.env.REGULATOR_AUX_WORKER_N),
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
+const regulatorBpWorkerAppAttr = {
+  nInstances: process.env.REGULATOR_N,
+  // REQUIRED. Application/Task name
+  name: 'reg_bpw',
+  assignPublicIp: process.env.REGULATOR_BP_WORKER_SERVICE_ALB === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.REGULATOR_N) > 0,
+  // Specify Container and container image information
+  containerInfo: {
+    portInfo: [
+      {
+        containerPort: Number(process.env.REGULATOR_BP_WORKER_PORT),
+        hostPort: Number(process.env.REGULATOR_BP_WORKER_PORT),
+        // REQUIRED. Route 53 will add hostname.zoneName DNS
+        hostname: process.env.REGULATOR_BP_WORKER_SERVICE,
+        healthcheck: {
+          path: '/healthcheck',
+          unhealthyThresholdCount: 10,
+          healthyThresholdCount: 2,
+          healthyHttpCodes: '200-499',
+        },
+        albType: process.env.REGULATOR_BP_WORKER_SERVICE_ALB,
+      },
+    ],
+    environmentVars: {
+      AUTOSTART_RETRIES: process.env.REGULATOR_AUTOSTART_RETRIES,
+      GAS: process.env.GAS_CLIENT,
+      LOG_LEVEL: process.env.REGULATOR_LOG_LEVEL,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env.REGULATOR_LOG_HTTP_PAYLOAD_ENABLED,
+      LOG_HTTP_FULL_DATA: process.env.REGULATOR_LOG_HTTP_FULL_DATA,
+      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
+      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
+      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
+      MONGO_URL: process.env.MONGO_URL,
+      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      GAS_PRICE: process.env.GAS_PRICE,
+      STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
+      ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
+      DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
+      PROTOCOL: process.env.REGULATOR_PROTOCOL,
+      COMMITMENTS_DB: process.env.REGULATOR_COMMITMENTS_DB,
+      HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
+      ENVIRONMENT: 'aws',
+      ENABLE_QUEUE: process.env.ENABLE_QUEUE,
+      CLIENT_AUX_WORKER_URL: `https://${process.env.REGULATOR_AUX_WORKER_HOST}`,
+      PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
+      CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+    },
+    secretVars: [
+      {
+        envName: ['MONGO_INITDB_ROOT_PASSWORD'],
+        type: ['secureString'],
+        parameterName: ['mongo_password'],
+      },
+      {
+        envName: ['MONGO_INITDB_ROOT_USERNAME'],
+        type: ['string'],
+        parameterName: ['mongo_user'],
+      },
+      {
+        envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
+        type: ['secureString'],
+        parameterName: ['regulator_zkp_private_key_ganache'],
+      },
+    ],
+    command: [],
+    repository: process.env.ECR_REPO,
+    imageName: 'nightfall-client_bpw',
+    imageTag: process.env.RELEASE,
+  },
+  cpu: 1,
+  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
+  schedule: {},
+  efsVolumes: [
+    {
+      path: '/build',
+      volumeName: 'build',
+      containerPath: '/app/build',
+    },
+  ],
+};
+
 const appsAttr = [
   gethAppAttr,
   optimistAppAttr,
@@ -1073,6 +1318,9 @@ const appsAttr = [
   clientTxWorkerAppAttr,
   clientAuxWorkerAppAttr,
   clientBpWorkerAppAttr,
+  regulatorAppAttr,
+  regulatorAuxWorkerAppAttr,
+  regulatorBpWorkerAppAttr,
 ];
 
 const deployerAttr = {
