@@ -125,8 +125,10 @@ destroy-infra:
 	@if [ "${STOP_DB}" ]; then\
 	   make stop-db; \
     fi
-	cd scripts && RELEASE=${RELEASE} ./delete-dynamodb.sh
-	cd scripts && RELEASE=${RELEASE} ./delete-volumes.sh
+	@if [ -z "${CLUSTER}" ]; then\
+	  cd scripts && RELEASE=${RELEASE} ./delete-dynamodb.sh; \
+	  cd scripts && RELEASE=${RELEASE} ./delete-volumes.sh; \
+	fi
 
 add-cluster:
 	cd scripts && RELEASE=${RELEASE} REGION=${REGION} ./add-cluster.sh

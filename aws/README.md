@@ -426,6 +426,7 @@ To delete cluster
 ```
 RELEASE=xxx CLUSTER=yyy make delete-cluster
 RELEASE=xxx CLUSTER=yyy make deploy-infra
+RELEASE=xxx CLUSTER=yyy make destroy-infra
 ```
 
 15. Destroying environment
