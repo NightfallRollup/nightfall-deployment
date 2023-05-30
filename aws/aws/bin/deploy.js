@@ -47,8 +47,23 @@ else {
     options,
     ecsScheduleFnc,
   });
-  
-  const { services, albs } = appStack;
+ 
+  const clusters = process.env.CLUSTERS === '' ? [] : process.env.CLUSTERS.split(' ');
+
+  const clusterStacks = [];
+  for (const cluster of clusters) {
+    clusterStacks.push(new ApplicationStack(app, `${envAttr.name}-${cluster}`, {
+      description: `${envAttr.name} ${cluster} Stack`,
+      env,
+      options,
+      ecsScheduleFnc,
+      alb: appStack.albs,
+      taskRole: appStack.taskRole,
+      clusterName: cluster,
+    }));
+  }
+ 
+  const { services, albs } = clusterStacks.length ? clusterStacks[clusterStacks.length - 1] : appStack;
   
   // Create wAF
   /*

@@ -100,6 +100,11 @@ endif
 # Build context file if it doesnt exist
 CONTEXT:=$(shell if [ ! -f "./aws/contexts/cdk.context.${RELEASE}.json" ]; then cd scripts && ENV_NAME=${RELEASE} REGION=${REGION} ./create-cdk-context.sh; fi)
 
+update-infra:
+	@make cdk-context
+	cd scripts && RELEASE=${RELEASE} ./deploy-cdk.sh
+
+
 # Deploy Infrastructure (Cloudformation stacks)
 deploy-infra:
 	@make cdk-context
@@ -122,6 +127,12 @@ destroy-infra:
     fi
 	cd scripts && RELEASE=${RELEASE} ./delete-dynamodb.sh
 	cd scripts && RELEASE=${RELEASE} ./delete-volumes.sh
+
+add-cluster:
+	cd scripts && RELEASE=${RELEASE} REGION=${REGION} ./add-cluster.sh
+
+delete-cluster:
+	cd scripts && RELEASE=${RELEASE} REGION=${REGION} ./delete-cluster.sh
 
 # Deploy EC2 deployer instance
 deploy-deployer:
@@ -572,14 +583,16 @@ push-geth:
 
 # Stop services
 stop-infra:
-	make stop-optimist
-	make stop-opt_txw
-	make stop-opt_bpw
-	make stop-opt_baw
-	make stop-proposer
-	make stop-publisher
-	make stop-dashboard
-	make stop-challenger
+	@if [ -z "${CLUSTER}" ]; then\
+	  make stop-optimist; \
+	  make stop-opt_txw; \
+	  make stop-opt_bpw; \
+	  make stop-opt_baw; \
+	  make stop-proposer; \
+	  make stop-publisher; \
+	  make stop-dashboard; \
+	  make stop-challenger; \
+	fi
 	make stop-worker
 	make stop-client
 	make stop-client_txw

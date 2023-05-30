@@ -105,6 +105,7 @@ class ApplicationStack extends Stack {
       : Certificate.fromCertificateArn(this, 'cert', certificateArn);
 
     // US cerfitifate is used to deploy wallet in Cloud Formation, which requires a certificate from Virginia region (US-EAST-1)
+    /*
     const certificateUs = createCert
       ? new DnsValidatedCertificate(this, 'certUs', {
           domainName: `*.${zoneName}`,
@@ -112,9 +113,12 @@ class ApplicationStack extends Stack {
           region: 'us-east-1',
         })
       : Certificate.fromCertificateArn(this, 'certUs', certificateArn);
+    */
+    const certificateUs = Certificate.fromCertificateArn(this, 'certUs', certificate.certificateArn);
 
     // ALB  =======================================================================================================
-    this.albs = [];
+    const { albs = [] } = props;
+    this.albs = albs;
 
     // ALB (external) =======================================================================================================
     // - Create ALB in public subnet
@@ -248,7 +252,8 @@ class ApplicationStack extends Stack {
 
     // ECS Cluster =============================================================================
 
-    const cluster = new ecs.Cluster(this, 'Cluster', {
+    const { clusterName = '' } = props;
+    const cluster = new ecs.Cluster(this, `Cluster${clusterName}`, {
       vpc,
       containerInsights: true,
     });
@@ -256,33 +261,38 @@ class ApplicationStack extends Stack {
     // Fargate Tasks ===========================================================================
 
     // Task Role
-    const taskRole = new iam.Role(this, 'ecsTaskExecutionRole', {
-      assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-    });
+    if (!props.taskRole) {
+      const taskRole = new iam.Role(this, 'ecsTaskExecutionRole', {
+        assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
+      });
 
-    taskRole.addToPrincipalPolicy(
-      new iam.PolicyStatement({
-        actions: [
-          'ssmmessages:CreateControlChannel',
-          'ssmmessages:CreateDataChannel',
-          'ssmmessages:OpenControlChannel',
-          'ssmmessages:OpenDataChannel',
-          'dynamodb:Scan',
-          'dynamodb:Query',
-          'dynamodb:PutItem',
-          'dynamodb:DeleteItem',
-          'cloudwatch:PutMetricData',
-          'apigateway:*',
-          'execute-api:Invoke',
-          'execute-api:ManageConnections',
-        ],
-        resources: ['*'],
-      }),
-    );
+      taskRole.addToPrincipalPolicy(
+        new iam.PolicyStatement({
+          actions: [
+            'ssmmessages:CreateControlChannel',
+            'ssmmessages:CreateDataChannel',
+            'ssmmessages:OpenControlChannel',
+            'ssmmessages:OpenDataChannel',
+            'dynamodb:Scan',
+            'dynamodb:Query',
+            'dynamodb:PutItem',
+            'dynamodb:DeleteItem',
+            'cloudwatch:PutMetricData',
+            'apigateway:*',
+            'execute-api:Invoke',
+            'execute-api:ManageConnections',
+          ],
+          resources: ['*'],
+        }),
+      );
 
-    taskRole.addManagedPolicy(
-      iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
-    );
+      taskRole.addManagedPolicy(
+        iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
+      );
+      this.taskRole = taskRole;
+    } else {
+      this.taskRole = props.taskRole;
+    }
 
     // ===== Tasks Definition
     const { appsAttr } = options;
@@ -304,9 +314,11 @@ class ApplicationStack extends Stack {
       ? {}
       : JSON.parse(process.env.TASK_PRIORITIES.replaceAll('\\', '"'), 'utf8');
 
+    const _clusterName = clusterName === '' ? '' : `${clusterName.toUpperCase()}_`;
+
     for (const appAttr of appsAttr) {
       // Fargate Task
-      const { name, memoryLimitMiB, cpu = 1, assignPublicIp = false, enable = true, nInstances = 1, desiredCount = 1 } = appAttr;
+      const { name, cpu = 1, assignPublicIp = false, enable = true, nInstances = 1, desiredCount = 1, } = appAttr(_clusterName);
       // Skip task if disabled
       if (!enable) {
         // eslint-disable-next-line no-continue
@@ -323,7 +335,7 @@ class ApplicationStack extends Stack {
           new ecs.FargateTaskDefinition(this, `${envAttr.name}-${name}${instanceLabel}taskDef`, {
             memoryLimitMiB: vcpus * 2,
             cpu : vcpus,
-            taskRole,
+            taskRole: this.taskRole,
           }),
         );
   
@@ -344,7 +356,7 @@ class ApplicationStack extends Stack {
         );
   
         // ECR Repo
-        const { containerInfo } = appAttr;
+        const { containerInfo } = appAttr(_clusterName);
         const { imageName, imageTag, imageNameIndex = '' } = containerInfo;
         let _imageName = imageName;
         if (imageNameIndex.includes(',')) {
@@ -468,7 +480,7 @@ class ApplicationStack extends Stack {
           tgInfo.push({ tg: tg[tg.length - 1], url: `https://${fqdn}/`, indexedHostname });
         }
   
-        const { efsVolumes = [] } = appAttr;
+        const { efsVolumes = [] } = appAttr(_clusterName);
   
         for (const volumeInfo of efsVolumes) {
           efsAccessPoint.push(
@@ -520,7 +532,7 @@ class ApplicationStack extends Stack {
             );
             secrets[`${secret.envName[0]}`] = ecs.Secret.fromSsmParameter(_secret);
           }
-          _secret.grantRead(taskRole);
+          _secret.grantRead(this.taskRole);
         }
 
         // Container
@@ -586,7 +598,6 @@ class ApplicationStack extends Stack {
             this.services[this.services.length - 1].serviceName
           } ${taskDefinition[taskDefinition.length - 1].defaultContainer?.containerName}`,
         });
-  
         let tgIdx = 0;
         for (const tgEl of tgInfo) {
           // tgEl.tg.addTarget(this.services[this.services.length - 1]);
@@ -606,7 +617,7 @@ class ApplicationStack extends Stack {
   
         // Add Schedule =====================================================================================================
         const { ecsScheduleFnc } = props;
-        const { downtime = '' } = appAttr.schedule;
+        const { downtime = '' } = appAttr(_clusterName).schedule;
         let start = '';
         let stop = '';
         if (downtime) {
@@ -678,7 +689,7 @@ class ApplicationStack extends Stack {
       } = ec2Attr;
       const { _alb, _httpsListener } = connectTo === 'external' ? this.albs[0] : this.albs[1];
       // eslint-disable-next-line no-continue
-      if (!enable) continue;
+      if (!enable || _clusterName != '') continue;
 
       // Add DNS alias for the app
       const fqdn = `${hostname}.${zoneName}`;
@@ -833,6 +844,8 @@ class ApplicationStack extends Stack {
       });
       listenerPriority[hostname] = priority;
     }
+
+
     // If we are just checking diffs, no need to save priority file
     if (process.env.SAVE_TASK_PRIORITY) {
        fs.writeFileSync(`/tmp/nightfall.priority`, JSON.stringify(listenerPriority));

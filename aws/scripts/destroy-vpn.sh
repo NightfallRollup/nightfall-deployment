@@ -46,7 +46,7 @@ for certificateArn in $certificateArns; do
   status=$(aws acm list-tags-for-certificate \
      --certificate-arn $certificateArn \
      --region $REGION \
-     | jq ".Tags[] | select((.Key==\"${serverCertificateName}\") or (.Key==\"${clientCertificateName}\")) ")
+     | jq ".Tags[] | select((.Value==\"${serverCertificateName}\") or (.Value==\"${clientCertificateName}\")) ")
   if [ "${status}" ]; then 
     echo "Deleting certificate ${certificateArn}..."
     aws acm delete-certificate  \

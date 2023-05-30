@@ -24,8 +24,17 @@ fi
 source ${SECRETS_ENV}
 set +o allexport
 
+# Retrieve clusters and capitalize first letter
+for tmp in $(cat ../env/${RELEASE}.env | grep "_CLIENT SECTION" | grep START | awk '{split($0,a," "); print a[3]}' | awk '{split($0,a,"_"); print a[1]}' | awk '{ print tolower($0)}'); do
+  if [ "${CLUSTERS}" ]; then
+    CLUSTERS="${CLUSTERS} ${tmp^}";
+  else
+    CLUSTERS="${tmp^}";
+  fi
+done
+
 mkdir -p /tmp
 rm -f /tmp/priorities.nightfall
 TASK_PRIORITIES=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/priorities" 2> /dev/null | jq '.Parameter.Value' | tr -d '"') 
-cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} cdk diff
+cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} CLUSTERS=${CLUSTERS} cdk diff
 

@@ -28,8 +28,53 @@ fi
 source ${SECRETS_ENV}
 set +o allexport
 
+_CLUSTER=${CLUSTER}
+if [ "${CLUSTER}" ]; then
+  _CLUSTER="${CLUSTER^^}_"
+fi
+
 # Check Web3 is running
 set +e
+
+### Set cluster variables
+set -x
+
+eval "$_OPTIMIST_N"='$'{_CLUSTER}'$'{OPTIMIST_N}
+eval "$_OPTIMIST_TX_WORKER_N"='$'{_CLUSTER}'$'{OPTIMIST_TX_WORKER_N}
+eval "$_OPTIMIST_HTTP_HOST"='$'{_CLUSTER}'$'{OPTIMIST_HTTP_HOST}
+eval "$_OPTIMIST_TX_WORKER_HOST"='$'{_CLUSTER}'$'{OPTIMIST_TX_WORKER_HOST}
+eval "$_OPTIMIST_BP_WORKER_HOST"='$'{_CLUSTER}'$'{OPTIMIST_BP_WORKER_HOST}
+eval "$_OPTIMIST_BA_WORKER_HOST"='$'{_CLUSTER}'$'{OPTIMIST_BA_WORKER_HOST}
+
+eval "$_PROPOSER_N"='$'{_CLUSTER}'$'{PROPOSER_N}
+eval "$_PROPOSER_HOST"='$'{_CLUSTER}'$'{PROPOSER_HOST}
+
+eval "$_CHALLENGER_N"='$'{_CLUSTER}'$'{CHALLENGER_N}
+eval "$_CHALLENGER_HOST"='$'{_CLUSTER}'$'{CHALLENGER_HOST}
+
+eval "$_PUBLISHER_ENABLE"='$'{_CLUSTER}'$'{PUBLISHER_ENABLE}
+eval "$_PUBLISHER_HOST"='$'{_CLUSTER}'$'{PUBLISHER_HOST}
+
+eval "$_DASHBOARD_ENABLE"='$'{_CLUSTER}'$'{DASHBOARD_ENABLE}
+eval "$_DASHBOARD_HOST"='$'{_CLUSTER}'$'{DASHBOARD_HOST}
+
+eval "$_CLIENT_N"='$'{_CLUSTER}'$'{CLIENT_N}
+eval "$_CLIENT_AUX_WORKER_N"='$'{_CLUSTER}'$'{CLIENT_AUX_WORKER_N}
+eval "$_CLIENT_TX_WORKER_N"='$'{_CLUSTER}'$'{CLIENT_TX_WORKER_N}
+eval "$_CIRCOM_WORKER_N"='$'{_CLUSTER}'$'{CIRCOM_WORKER_N}
+eval "$_CLIENT_HOST"='$'{_CLUSTER}'$'{CLIENT_HOST}
+eval "$_CLIENT_AUX_WORKER_HOST"='$'{_CLUSTER}'$'{CLIENT_AUX_WORKER_HOST}
+eval "$_CLIENT_BP_WORKER_HOST"='$'{_CLUSTER}'$'{CLIENT_BP_WORKER_HOST}
+eval "$_CLIENT_TX_WORKER_HOST"='$'{_CLUSTER}'$'{CLIENT_TX_WORKER_HOST}
+eval "$_CIRCOM_WORKER_HOST"='$'{_CLUSTER}'$'{CIRCOM_WORKER_HOST}
+
+eval "$_REGULATOR_N"='$'{_CLUSTER}'$'{REGULATOR_N}
+eval "$_REGULATOR_HOST"='$'{_CLUSTER}'$'{REGULATOR_HOST}
+eval "$_REGULATOR_AUX_WORKER_N"='$'{_CLUSTER}'$'{REGULATOR_AUX_WORKER_N}
+eval "$_REGULATOR_AUX_WORKER_HOST"='$'{_CLUSTER}'$'{REGULATOR_AUX_WORKER_HOST}
+eval "$_REGULATOR_BP_WORKER_HOST"='$'{_CLUSTER}'$'{REGULATOR_BP_WORKER_HOST}
+
+#############
 
 while true; do
   echo "Waiting for connection with ${BLOCKCHAIN_WS_HOST}..."
@@ -52,9 +97,9 @@ rm -f ./output.txt
 set -e
 
 # Start Optimist TX Workers
-if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+if [ "${_OPTIMIST_TX_WORKER_N}" ] && [ "${_OPTIMIST_TX_WORKER_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
   echo "Starting Optimist TX Workers service..."
-  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${OPTIMIST_TX_WORKER_N} ./status-service.sh opttxw)
+  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_OPTIMIST_TX_WORKER_N} ./status-service.sh opttxw)
   OPTIMIST_TXW_RUNNING=$(echo ${OPTIMIST_TXW_STATUS} | grep Running)
   OPTIMIST_TXW_DESIRED=$(echo ${OPTIMIST_TXW_STATUS} | grep Desired)
   OPTIMIST_TXW_RUNNING_COUNT=$(echo ${OPTIMIST_TXW_RUNNING: -1})
@@ -66,13 +111,13 @@ if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; t
   # exit 1
   #i
 
-  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${OPTIMIST_TX_WORKER_N} ./start-service.sh opttxw)
+  OPTIMIST_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_OPTIMIST_TX_WORKER_N} ./start-service.sh opttxw)
   echo "---- Optimist TX Workers Status ----"
   echo "New ${OPTIMIST_TXW_STATUS}"
 fi
 
 # Start Optimist BA Workers
-if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+if [ "${_OPTIMIST_N}" ] && [ "${_OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
   echo "Starting Optimist BA Workers service..."
   OPTIMIST_BAW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbaw)
   OPTIMIST_BAW_RUNNING=$(echo ${OPTIMIST_BAW_STATUS} | grep Running)
@@ -92,7 +137,7 @@ if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
 fi
 
 # Start Optimist BP Workers
-if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+if [ "${_OPTIMIST_N}" ] && [ "${_OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
   echo "Starting Optimist BP Workers service..."
   OPTIMIST_BPW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh optbpw)
   OPTIMIST_BPW_RUNNING=$(echo ${OPTIMIST_BPW_STATUS} | grep Running)
@@ -113,14 +158,14 @@ fi
 
 
 # Start Optimist
-if [ "${OPTIMIST_N}" -gt 0 ]; then
+if [ "${_OPTIMIST_N}" ] && [ "${_OPTIMIST_N}" -gt 0 ]; then
   # Check opt txw are alive
-  if [ "${OPTIMIST_TX_WORKER_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+  if [ "${_OPTIMIST_TX_WORKER_N}" ] && [ "${_OPTIMIST_TX_WORKER_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     while true; do
-      echo "Waiting for connection with ${OPTIMIST_TX_WORKER_HOST}..."
-      OPTIMIST_TXW_RESPONSE=$(curl https://"${OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_OPTIMIST_TX_WORKER_HOST}..."
+      OPTIMIST_TXW_RESPONSE=$(curl https://"${_OPTIMIST_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${OPTIMIST_TXW_RESPONSE}" ]; then
-        echo "Connected to ${OPTIMIST_TX_WORKER_HOST}..."
+        echo "Connected to ${_OPTIMIST_TX_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -128,12 +173,12 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
   fi
 
   # Check opt bpw are alive
-  if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+  if [ "${_OPTIMIST_N}" ] && [ "${_OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     while true; do
-      echo "Waiting for connection with ${OPTIMIST_BP_WORKER_HOST}..."
-      OPTIMIST_BPW_RESPONSE=$(curl https://"${OPTIMIST_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_OPTIMIST_BP_WORKER_HOST}..."
+      OPTIMIST_BPW_RESPONSE=$(curl https://"${_OPTIMIST_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${OPTIMIST_BPW_RESPONSE}" ]; then
-        echo "Connected to ${OPTIMIST_BP_WORKER_HOST}..."
+        echo "Connected to ${_OPTIMIST_BP_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -141,12 +186,12 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
   fi
 
   # Check opt baw are alive
-  if [ "${OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
+  if [ "${_OPTIMIST_N}" ] && [ "${_OPTIMIST_N}" -gt 0 ] && [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     while true; do
-      echo "Waiting for connection with ${OPTIMIST_BA_WORKER_HOST}..."
-      OPTIMIST_BAW_RESPONSE=$(curl https://"${OPTIMIST_BA_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_OPTIMIST_BA_WORKER_HOST}..."
+      OPTIMIST_BAW_RESPONSE=$(curl https://"${_OPTIMIST_BA_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${OPTIMIST_BAW_RESPONSE}" ]; then
-        echo "Connected to ${OPTIMIST_BA_WORKER_HOST}..."
+        echo "Connected to ${_OPTIMIST_BA_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -172,10 +217,10 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
   
   # Check optimist/adversary is alive
   while true; do
-    echo "Waiting for connection with ${OPTIMIST_HTTP_HOST}..."
-    OPTIMIST_RESPONSE=$(curl https://"${OPTIMIST_HTTP_HOST}"/contract-address/Shield 2> /dev/null | grep 0x || true)
+    echo "Waiting for connection with ${_OPTIMIST_HTTP_HOST}..."
+    OPTIMIST_RESPONSE=$(curl https://"${_OPTIMIST_HTTP_HOST}"/contract-address/Shield 2> /dev/null | grep 0x || true)
     if [ "${OPTIMIST_RESPONSE}" ]; then
-      echo "Connected to ${OPTIMIST_HTTP_HOST}..."
+      echo "Connected to ${_OPTIMIST_HTTP_HOST}..."
 	    break
     fi
     sleep 10
@@ -183,7 +228,7 @@ if [ "${OPTIMIST_N}" -gt 0 ]; then
 fi
 
 # Start proposer
-if [ "${PROPOSER_N}" -gt 0 ]; then
+if [ "${_PROPOSER_N}" ] && [ "${_PROPOSER_N}" -gt 0 ]; then
   echo "Starting Proposer service..."
   PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh proposer)
   PROPOSER_RUNNING=$(echo ${PROPOSER_STATUS} | grep Running)
@@ -204,7 +249,7 @@ fi
 
 
 # Start challenger
-if [ "${CHALLENGER_N}" -gt 0 ]; then
+if [ "${_CHALLENGER_N}" ] && [ "${_CHALLENGER_N}" -gt 0 ]; then
   echo "Starting Challenger service..."
   CHALLENGER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh challenger)
   CHALLENGER_RUNNING=$(echo ${CHALLENGER_STATUS} | grep Running)
@@ -224,7 +269,7 @@ if [ "${CHALLENGER_N}" -gt 0 ]; then
 fi
 
 # Start publisher
-if [ "${PUBLISHER_ENABLE}" = "true" ]; then
+if [ "${_PUBLISHER_ENABLE}" ] && [ "${_PUBLISHER_ENABLE}" = "true" ]; then
   echo "Starting Publisher service..."
   PUBLISHER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh publisher)
   PUBLISHER_RUNNING=$(echo ${PUBLISHER_STATUS} | grep Running)
@@ -244,7 +289,7 @@ if [ "${PUBLISHER_ENABLE}" = "true" ]; then
 fi
   
 
-if [ "${DASHBOARD_ENABLE}" = "true" ]; then
+if [ "${_DASHBOARD_ENABLE}" ] && [ "${_DASHBOARD_ENABLE}" = "true" ]; then
   # Start dashboard
   echo "Starting Dashboard service..."
   DASHBOARD_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh dashboard)
@@ -266,13 +311,13 @@ fi
   
 
 # Check proposer is alive
-if [ "${PROPOSER_N}" -gt 0 ]; then
+if [ "${_PROPOSER_N}" ] && [ "${_PROPOSER_N}" -gt 0 ]; then
   ## ADD PROPOSER HEADER
   while true; do
-    echo "Waiting for connection with ${PROPOSER_HOST}..."
-    PROPOSER_RESPONSE=$(curl https://"${PROPOSER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${_PROPOSER_HOST}..."
+    PROPOSER_RESPONSE=$(curl https://"${_PROPOSER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${PROPOSER_RESPONSE}" ]; then
-      echo "Connected to ${PROPOSER_HOST}..."
+      echo "Connected to ${_PROPOSER_HOST}..."
 	    break
     fi
     sleep 10
@@ -280,12 +325,12 @@ if [ "${PROPOSER_N}" -gt 0 ]; then
 fi
 
 # Check challenger is alive
-if [ "${CHALLENGER_N}" -gt 0 ]; then
+if [ "${_CHALLENGER_N}" ] && [ "${_CHALLENGER_N}" -gt 0 ]; then
   while true; do
-    echo "Waiting for connection with ${CHALLENGER_HOST}..."
-    CHALLENGER_RESPONSE=$(curl https://"${CHALLENGER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${_CHALLENGER_HOST}..."
+    CHALLENGER_RESPONSE=$(curl https://"${_CHALLENGER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${CHALLENGER_RESPONSE}" ]; then
-      echo "Connected to ${CHALLENGER_HOST}..."
+      echo "Connected to ${_CHALLENGER_HOST}..."
 	    break
     fi
     sleep 10
@@ -293,25 +338,25 @@ if [ "${CHALLENGER_N}" -gt 0 ]; then
 fi
 
 # Check publisher is alive
-if [ "${PUBLISHER_ENABLE}" = "true" ]; then
+if [ "${_PUBLISHER_ENABLE}" ] && [ "${_PUBLISHER_ENABLE}" = "true" ]; then
   while true; do
-    echo "Waiting for connection with ${PUBLISHER_HOST}..."
-    PUBLISHER_RESPONSE=$(curl https://"${PUBLISHER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${_PUBLISHER_HOST}..."
+    PUBLISHER_RESPONSE=$(curl https://"${_PUBLISHER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${PUBLISHER_RESPONSE}" ]; then
-      echo "Connected to ${PUBLISHER_HOST}..."
+      echo "Connected to ${_PUBLISHER_HOST}..."
 	    break
     fi
     sleep 10
   done
 fi
 
-if [ "${DASHBOARD_ENABLE}" = "true" ]; then
+if [ "${_DASHBOARD_ENABLE}" ] && [ "${_DASHBOARD_ENABLE}" = "true" ]; then
   # Check dashboard is alive
   while true; do
-    echo "Waiting for connection with ${DASHBOARD_HOST}..."
-    DASHBOARD_RESPONSE=$(curl https://"${DASHBOARD_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${_DASHBOARD_HOST}..."
+    DASHBOARD_RESPONSE=$(curl https://"${_DASHBOARD_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${DASHBOARD_RESPONSE}" ]; then
-      echo "Connected to ${DASHBOARD_HOST}..."
+      echo "Connected to ${_DASHBOARD_HOST}..."
 	    break
     fi
     sleep 10
@@ -320,10 +365,10 @@ fi
 
 ## Client
 # Start Worker
-echo "Number of clients deployed: ${CLIENT_N}"
-if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
+echo "Number of clients deployed: ${_CLIENT_N}"
+if [[ ("${_CLIENT_N}") && ("${_CLIENT_N}" != "0") ]]; then
   echo "Starting circom worker service..."
-  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CIRCOM_WORKER_N} ./status-service.sh circom)
+  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_CIRCOM_WORKER_N} ./status-service.sh circom)
   CIRCOM_RUNNING=$(echo ${CIRCOM_STATUS} | grep Running)
   CIRCOM_DESIRED=$(echo ${CIRCOM_STATUS} | grep Desired)
   CIRCOM_RUNNING_COUNT=$(echo ${CIRCOM_RUNNING: -1})
@@ -335,16 +380,16 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
     #exit 1
   #fi
   
-  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CIRCOM_WORKER_N} ./start-service.sh circom)
+  CIRCOM_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_CIRCOM_WORKER_N} ./start-service.sh circom)
   echo "---- Circom Status ----"
   echo "New ${CIRCOM_STATUS}"
   
   # Check circom worker is alive
   while true; do
-    echo "Waiting for connection with ${CIRCOM_WORKER_HOST}..."
-    CIRCOM_RESPONSE=$(curl https://"${CIRCOM_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${_CIRCOM_WORKER_HOST}..."
+    CIRCOM_RESPONSE=$(curl https://"${_CIRCOM_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${CIRCOM_RESPONSE}" ]; then
-      echo "Connected to ${CIRCOM_WORKER_HOST}..."
+      echo "Connected to ${_CIRCOM_WORKER_HOST}..."
 	    break
     fi
     sleep 10
@@ -372,13 +417,13 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
   if [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     # Start Client Auxw Worker
     echo "Starting client AUX service..."
-    CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./status-service.sh clientaux)
+    CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_CLIENT_AUX_WORKER_N} ./status-service.sh clientaux)
     CLIENT_AUXW_RUNNING=$(echo ${CLIENT_AUXW_STATUS} | grep Running)
     CLIENT_AUXW_DESIRED=$(echo ${CLIENT_AUXW_STATUS} | grep Desired)
     CLIENT_AUXW_RUNNING_COUNT=$(echo ${CLIENT_AUXW_RUNNING: -1})
     CLIENT_AUXW_DESIRED_COUNT=$(echo ${CLIENT_AUXW_DESIRED: -1})
   
-    CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_AUX_WORKER_N} ./start-service.sh clientaux)
+    CLIENT_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_CLIENT_AUX_WORKER_N} ./start-service.sh clientaux)
     echo "---- Client aux Status ----"
     echo "New ${CLIENT_AUXW_STATUS}"
 
@@ -402,7 +447,7 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
 
     # Start Client TX Worker
     echo "Starting client TX service..."
-    CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./status-service.sh clienttxw)
+    CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_CLIENT_TX_WORKER_N} ./status-service.sh clienttxw)
     CLIENT_TXW_RUNNING=$(echo ${CLIENT_TXW_STATUS} | grep Running)
     CLIENT_TXW_DESIRED=$(echo ${CLIENT_TXW_STATUS} | grep Desired)
     CLIENT_TXW_RUNNING_COUNT=$(echo ${CLIENT_TXW_RUNNING: -1})
@@ -414,16 +459,16 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
       #exit 1
     #fi
   
-    CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${CLIENT_TX_WORKER_N} ./start-service.sh clienttxw)
+    CLIENT_TXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_CLIENT_TX_WORKER_N} ./start-service.sh clienttxw)
     echo "---- Client txw Status ----"
     echo "New ${CLIENT_TXW_STATUS}"
 
       # Check client auxw is alive
     while true; do
-      echo "Waiting for connection with ${CLIENT_AUX_WORKER_HOST}..."
-      CLIENT_AUXW_RESPONSE=$(curl https://"${CLIENT_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_CLIENT_AUX_WORKER_HOST}..."
+      CLIENT_AUXW_RESPONSE=$(curl https://"${_CLIENT_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${CLIENT_AUXW_RESPONSE}" ]; then
-        echo "Connected to ${CLIENT_AUX_WORKER_HOST}..."
+        echo "Connected to ${_CLIENT_AUX_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -431,10 +476,10 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
 
       # Check client bpw is alive
     while true; do
-      echo "Waiting for connection with ${CLIENT_BP_WORKER_HOST}..."
-      CLIENT_BPW_RESPONSE=$(curl https://"${CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_CLIENT_BP_WORKER_HOST}..."
+      CLIENT_BPW_RESPONSE=$(curl https://"${_CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${CLIENT_BPW_RESPONSE}" ]; then
-        echo "Connected to ${CLIENT_BP_WORKER_HOST}..."
+        echo "Connected to ${_CLIENT_BP_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -442,10 +487,10 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
 
     # Check client txis alive
     while true; do
-      echo "Waiting for connection with ${CLIENT_TX_WORKER_HOST}..."
-      CLIENT_TXW_RESPONSE=$(curl https://"${CLIENT_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_CLIENT_TX_WORKER_HOST}..."
+      CLIENT_TXW_RESPONSE=$(curl https://"${_CLIENT_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${CLIENT_TXW_RESPONSE}" ]; then
-        echo "Connected to ${CLIENT_TX_WORKER_HOST}..."
+        echo "Connected to ${_CLIENT_TX_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -454,10 +499,10 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
 
     # Check client is alive
   while true; do
-    echo "Waiting for connection with ${CLIENT_HOST}..."
-    CLIENT_RESPONSE=$(curl https://"${CLIENT_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${_CLIENT_HOST}..."
+    CLIENT_RESPONSE=$(curl https://"${_CLIENT_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${CLIENT_RESPONSE}" ]; then
-      echo "Connected to ${CLIENT_HOST}..."
+      echo "Connected to ${_CLIENT_HOST}..."
 	    break
     fi
     sleep 10
@@ -466,8 +511,8 @@ if [[ ("${CLIENT_N}") && ("${CLIENT_N}" != "0") ]]; then
 fi
 
 ## Regulator
-echo "Number of regulators deployed: ${REGULATOR_N}"
-if [[ ("${REGULATOR_N}") && ("${REGULATOR_N}" != "0") ]]; then
+echo "Number of regulators deployed: ${_REGULATOR_N}"
+if [[ ("${_REGULATOR_N}") && ("${_REGULATOR_N}" != "0") ]]; then
   # Start Regulator
   echo "Starting Regulator service..."
   REGULATOR_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh regulator)
@@ -484,13 +529,13 @@ if [[ ("${REGULATOR_N}") && ("${REGULATOR_N}" != "0") ]]; then
   if [ "${NIGHTFALL_LEGACY}" != "true" ]; then
     # Start Regulator Auxw Worker
     echo "Starting Regulator AUX service..."
-    REGULATOR_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${REGULATOR_AUX_WORKER_N} ./status-service.sh regaux)
+    REGULATOR_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_REGULATOR_AUX_WORKER_N} ./status-service.sh regaux)
     REGULATOR_AUXW_RUNNING=$(echo ${REGULATOR_AUXW_STATUS} | grep Running)
     REGULATOR_AUXW_DESIRED=$(echo ${REGULATOR_AUXW_STATUS} | grep Desired)
     REGULATOR_AUXW_RUNNING_COUNT=$(echo ${REGULATOR_AUXW_RUNNING: -1})
     REGULATOR_AUXW_DESIRED_COUNT=$(echo ${REGULATOR_AUXW_DESIRED: -1})
   
-    REGULATOR_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${REGULATOR_AUX_WORKER_N} ./start-service.sh regaux)
+    REGULATOR_AUXW_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} NEW_DESIRED_COUNT=${_REGULATOR_AUX_WORKER_N} ./start-service.sh regaux)
     echo "---- Regulator aux Status ----"
     echo "New ${REGULATOR_AUXW_STATUS}"
 
@@ -508,10 +553,10 @@ if [[ ("${REGULATOR_N}") && ("${REGULATOR_N}" != "0") ]]; then
 
     # Check Regulator auxw is alive
     while true; do
-      echo "Waiting for connection with ${REGULATOR_AUX_WORKER_HOST}..."
-      REGULATOR_AUXW_RESPONSE=$(curl https://"${REGULATOR_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_REGULATOR_AUX_WORKER_HOST}..."
+      REGULATOR_AUXW_RESPONSE=$(curl https://"${_REGULATOR_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${REGULATOR_AUXW_RESPONSE}" ]; then
-        echo "Connected to ${REGULATOR_AUX_WORKER_HOST}..."
+        echo "Connected to ${_REGULATOR_AUX_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -519,10 +564,10 @@ if [[ ("${REGULATOR_N}") && ("${REGULATOR_N}" != "0") ]]; then
 
     # Check regulator bpw is alive
     while true; do
-      echo "Waiting for connection with ${REGULATOR_BP_WORKER_HOST}..."
-      REGULATOR_BPW_RESPONSE=$(curl https://"${REGULATOR_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      echo "Waiting for connection with ${_REGULATOR_BP_WORKER_HOST}..."
+      REGULATOR_BPW_RESPONSE=$(curl https://"${_REGULATOR_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       if [ "${REGULATOR_BPW_RESPONSE}" ]; then
-        echo "Connected to ${REGULATOR_BP_WORKER_HOST}..."
+        echo "Connected to ${_REGULATOR_BP_WORKER_HOST}..."
 	      break
       fi
       sleep 10
@@ -531,10 +576,10 @@ if [[ ("${REGULATOR_N}") && ("${REGULATOR_N}" != "0") ]]; then
 
   # Check regulator is alive
   while true; do
-    echo "Waiting for connection with ${REGULATOR_HOST}..."
-    REGULATOR_RESPONSE=$(curl https://"${REGULATOR_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    echo "Waiting for connection with ${_REGULATOR_HOST}..."
+    REGULATOR_RESPONSE=$(curl https://"${_REGULATOR_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${REGULATOR_RESPONSE}" ]; then
-      echo "Connected to ${REGULATOR_HOST}..."
+      echo "Connected to ${_REGULATOR_HOST}..."
 	    break
     fi
     sleep 10
