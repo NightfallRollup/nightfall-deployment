@@ -429,6 +429,11 @@ RELEASE=xxx CLUSTER=yyy make deploy-infra
 RELEASE=xxx CLUSTER=yyy make destroy-infra
 ```
 
+It is possible to launch a ping-pong test, with the first user from main infrastructure client, and seconf user connected to a `cluster` client. To launch a ping pong test using `cluster` client:
+```
+RELEASE=xxx CLUSTER=yyy make test-ping_pong
+```
+
 15. Destroying environment
 Once you're done with the environment and are ready to tear it up, the steps are:
 

@@ -13,9 +13,9 @@ describe('Ping-pong tests', () => {
     environment.clientApiBpUrl = `https://${process.env.CLIENT_BP_WORKER_SERVICE}.${process.env.DOMAIN_NAME}`;
 
     if (CLIENT2_CHECK !== '') {
-      environment2.clientApiUrl = `https://${process.env.CLIENT_SERVICE}2.${process.env.DOMAIN_NAME}`;
-      environment2.clientApiTxUrl = `https://${process.env.CLIENT_TX_WORKER_SERVICE}2.${process.env.DOMAIN_NAME}`;
-      environment2.clientApiBpUrl = `https://${process.env.CLIENT_BP_WORKER_SERVICE}2.${process.env.DOMAIN_NAME}`;
+      environment2.clientApiUrl = process.env.CLIENT2_HOST;
+      environment2.clientApiTxUrl = process.env.CLIENT2_TX_WORKER_HOST;
+      environment2.clientApiBpUrl = process.env.CLIENT2_BP_WORKER_HOST;
     } else {
       environment2.clientApiUrl = `https://${process.env.CLIENT_SERVICE}.${process.env.DOMAIN_NAME}`;
       environment2.clientApiTxUrl = `https://${process.env.CLIENT_TX_WORKER_SERVICE}.${process.env.DOMAIN_NAME}`;
