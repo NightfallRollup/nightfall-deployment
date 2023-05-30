@@ -403,7 +403,33 @@ RELEASE=xxx make test-ping_pong
 Ping pong test can be launched at any time to test that the deployment is working correctly.
 While test is running, you can check client tmux session to see logs running.
 
-14. Destroying environment
+14. Add new clients
+To add new clients in different clusters:
+
+```
+RELEASE=xxx CLUSTER=yyy make add-cluster
+```
+where `yyy` is the name of the new cluster. By default, this command will generate infrastructure
+to deploy a new client and a new regulator. Code will be automatically generated and added to xxx.env file.
+It is up to you to customize the new client and regulator parameters.
+
+**NOTE** Adding a new client in a cluster also generates new keys for regulator. They are automatically added 
+to the ssm paramstore
+
+Once the cluster is created, it needs to be deployed.
+
+```
+RELEASE=xxx CLUSTER=yyy make deploy-infra
+```
+
+To delete cluster
+```
+RELEASE=xxx CLUSTER=yyy make delete-cluster
+RELEASE=xxx CLUSTER=yyy make deploy-infra
+RELEASE=xxx CLUSTER=yyy make destroy-infra
+```
+
+15. Destroying environment
 Once you're done with the environment and are ready to tear it up, the steps are:
 
 - Destroy resources created

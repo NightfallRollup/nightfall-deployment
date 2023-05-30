@@ -23,6 +23,21 @@ fi
 source ${SECRETS_ENV}
 set +o allexport
 
+# Retrieve clusters and capitalize first letter
+if [ -z "${CLUSTER}" ]; then
+  for tmp in $(cat ../env/${RELEASE}.env | grep "_CLIENT SECTION" | grep START | awk '{split($0,a," "); print a[3]}' | awk '{split($0,a,"_"); print a[1]}' | awk '{ print tolower($0)}'); do
+    if [ "${CLUSTERS}" ]; then
+      CLUSTERS="${CLUSTERS} ${tmp^}";
+    else
+      CLUSTERS="${tmp^}";
+    fi
+  done
+  STACKS="--all"
+else
+  CLUSTERS="${CLUSTER}"
+  STACKS="${RELEASE}-${CLUSTER}"
+fi
+
 TASK_PRIORITIES=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/priorities" 2> /dev/null | jq '.Parameter.Value' | tr -d '"') 
 if [ "${DEPLOYER_EC2}" == "true" ]; then
 	gh auth login --with-token < ../aws/keys/git-${RELEASE}.token
@@ -33,7 +48,7 @@ if [ "${DEPLOYER_EC2}" == "true" ]; then
 	  gh ssh-key delete ${GIT_KEY_ID} -y
   fi
 fi
-cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} cdk destroy --all
+cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} CLUSTERS=${CLUSTERS} cdk destroy ${STACKS}
 # Delete priorities only when not destroying deployer
 if [ "${DEPLOYER_EC2}" != "true" ]; then
   aws ssm delete-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/priorities" > /dev/null

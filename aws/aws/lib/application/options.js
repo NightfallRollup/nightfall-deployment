@@ -28,11 +28,11 @@ const efsAttr = {
   efsSgId: process.env.EFS_SG_ID,
 };
 
-const gethAppAttr = {
+const gethAppAttr = clusterName => ({
   // REQUIRED. Application/Task name
   name: 'geth',
   assignPublicIp: false,
-  enable: process.env.DEPLOYER_ETH_NETWORK === 'staging',
+  enable: clusterName === '' && Number(process.env.BLOCKCHAIN_N) && process.env.DEPLOYER_ETH_NETWORK === 'staging',
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -67,14 +67,14 @@ const gethAppAttr = {
   cpu: process.env.BLOCKCHAIN_CPU_COUNT ? Number(process.env.BLOCKCHAIN_CPU_COUNT ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
-};
+});
 
-const proposerAppAttr = {
+const proposerAppAttr = clusterName => ({
   nInstances : process.env.PROPOSER_N,
   // REQUIRED. Application/Task name
   name: 'proposer',
   assignPublicIp: false,
-  enable: Number(process.env.PROPOSER_N) > 0,
+  enable: clusterName === '' && Number(process.env.PROPOSER_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -148,14 +148,14 @@ const proposerAppAttr = {
       length: process.env.PROPOSER_DOWNTIME_LENGTH_MINUTES,
     },
   },
-};
+});
 
-const challengerAppAttr = {
+const challengerAppAttr = clusterName => ({
   nInstances : process.env.CHALLENGER_N,
   // REQUIRED. Application/Task name
   name: 'challenger',
   assignPublicIp: false,
-  enable: Number(process.env.CHALLENGER_N) > 0,
+  enable: clusterName === '' && Number(process.env.CHALLENGER_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -224,14 +224,14 @@ const challengerAppAttr = {
       length: process.env.CHALLENGER_DOWNTIME_LENGTH_MINUTES,
     },
   },
-};
+});
 
-const optimistAppAttr = {
+const optimistAppAttr = clusterName => ({
   nInstances : process.env.OPTIMIST_N,
   // REQUIRED. Application/Task name
   name: 'optimist', 
   assignPublicIp: false,
-  enable: Number(process.env.OPTIMIST_N) > 0,
+  enable: clusterName === '' && Number(process.env.OPTIMIST_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -310,14 +310,14 @@ const optimistAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const optTxWorkerAppAttr = {
+const optTxWorkerAppAttr = clusterName => ({
   nInstances : process.env.OPTIMIST_N,
   // REQUIRED. Application/Task name
   name: 'opt_txw', 
   assignPublicIp: false,
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_TX_WORKER_N) > 0,
+  enable: clusterName === '' && process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_TX_WORKER_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -379,14 +379,14 @@ const optTxWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const optBpWorkerAppAttr = {
+const optBpWorkerAppAttr = clusterName => ({
   nInstances : process.env.OPTIMIST_N,
   // REQUIRED. Application/Task name
   name: 'opt_bpw', 
   assignPublicIp: false,
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_N) > 0,
+  enable: clusterName === '' && process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -460,14 +460,14 @@ const optBpWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const optBaWorkerAppAttr = {
+const optBaWorkerAppAttr = clusterName => ({
   nInstances : process.env.OPTIMIST_N,
   // REQUIRED. Application/Task name
   name: 'opt_baw', 
   assignPublicIp: false,
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_N) > 0,
+  enable: clusterName === '' && process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.OPTIMIST_N) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -537,13 +537,13 @@ const optBaWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const publisherAppAttr = {
+const publisherAppAttr = clusterName => ({
   // REQUIRED. Application/Task name
   name: 'publisher',
   assignPublicIp: false,
-  enable: process.env.PUBLISHER_ENABLE === 'true',
+  enable: clusterName === '' && process.env.PUBLISHER_ENABLE === 'true',
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -596,13 +596,13 @@ const publisherAppAttr = {
   cpu: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
-};
+});
 
-const dashboardAppAttr = {
+const dashboardAppAttr = clusterName => ({
   // REQUIRED. Application/Task name
   name: 'dashboard',
   assignPublicIp: false,
-  enable: process.env.DASHBOARD_ENABLE === 'true',
+  enable: clusterName === '' && process.env.DASHBOARD_ENABLE === 'true',
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
@@ -698,34 +698,34 @@ const dashboardAppAttr = {
   cpu: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
-};
+});
 
-const circomWorkerAppAttr = {
-  nInstances: process.env.CLIENT_N,
+const circomWorkerAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}CLIENT_N`],
   // REQUIRED. Application/Task name
-  name: 'circomWorker',
+  name: `${clusterName.toLowerCase()}circomWorker`,
   assignPublicIp: false,
-  enable: Number(process.env.CLIENT_N) > 0,
+  enable: Number(process.env[`${clusterName}CLIENT_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.CIRCOM_WORKER_PORT),
-        hostPort: Number(process.env.CIRCOM_WORKER_PORT),
+        containerPort: Number(process.env[`${clusterName}CIRCOM_WORKER_PORT`]),
+        hostPort: Number(process.env[`${clusterName}CIRCOM_WORKER_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.CIRCOM_WORKER_SERVICE,
+        hostname: process.env[`${clusterName}CIRCOM_WORKER_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
         },
-        albType: process.env.CIRCOM_WORKER_SERVICE_ALB,
+        albType: process.env[`${clusterName}CIRCOM_WORKER_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.CIRCOM_WORKER_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.CIRCOM_WORKER_LOG_HTTP_FULL_DATA,
-      PROVER_TYPE: process.env.CIRCOM_WORKER_PROVER_TYPE,
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}CIRCOM_WORKER_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}CIRCOM_WORKER_LOG_HTTP_FULL_DATA`],
+      PROVER_TYPE: process.env[`${clusterName}CIRCOM_WORKER_PROVER_TYPE`],
       // if rapidsnarks, we only want on nodejs instance. So we fix number of CPUs here
-      CIRCOM_WORKER_COUNT: process.env.CIRCOM_WORKER_PROVER_TYPE === 'rapidsnark' ? '1' : process.env.CIRCOM_WORKER_CPU_COUNT,
+      CIRCOM_WORKER_COUNT: process.env[`${clusterName}CIRCOM_WORKER_PROVER_TYPE`] === 'rapidsnark' ? '1' : process.env[`${clusterName}CIRCOM_WORKER_CPU_COUNT`],
     },
     secretVars: [
     ],
@@ -746,54 +746,54 @@ const circomWorkerAppAttr = {
       containerPath: '/app/output',
     },
   ],
-};
+});
 
-const clientAppAttr = {
-  nInstances: process.env.CLIENT_N,
+const clientAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}CLIENT_N`],
   // REQUIRED. Application/Task name
-  name: 'client',
-  assignPublicIp: process.env.CLIENT_SERVICE_ALB === 'external',
-  enable: Number(process.env.CLIENT_N) > 0,
+  name: `${clusterName.toLowerCase()}client`,
+  assignPublicIp: process.env[`${clusterName}CLIENT_SERVICE_ALB`] === 'external',
+  enable: Number(process.env[`${clusterName}CLIENT_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.CLIENT_PORT),
-        hostPort: Number(process.env.CLIENT_PORT),
+        containerPort: Number(process.env[`${clusterName}CLIENT_PORT`]),
+        hostPort: Number(process.env[`${clusterName}CLIENT_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.CLIENT_SERVICE,
+        hostname: process.env[`${clusterName}CLIENT_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
           unhealthyThresholdCount: 10,
           healthyThresholdCount: 2,
           healthyHttpCodes: '200-499',
         },
-        albType: process.env.CLIENT_SERVICE_ALB,
+        albType: process.env[`${clusterName}CLIENT_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
+      AUTOSTART_RETRIES: process.env[`${clusterName}CLIENT_AUTOSTART_RETRIES`],
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
+      LOG_LEVEL: process.env[`${clusterName}CLIENT_LOG_LEVEL`],
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}CLIENT_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}CLIENT_LOG_HTTP_FULL_DATA`],
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       MONGO_URL: process.env.MONGO_URL,
-      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      CIRCOM_WORKER_HOST: process.env[`${clusterName}CIRCOM_WORKER_HOST`],
       GAS_PRICE: process.env.GAS_PRICE,
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
-      PROTOCOL: process.env.CLIENT_PROTOCOL,
+      PROTOCOL: process.env[`${clusterName}CLIENT_PROTOCOL`],
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
-      COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      COMMITMENTS_DB: process.env[`${clusterName}CLIENT_COMMITMENTS_DB`],
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
-      CLIENT_AUX_WORKER_URL: `https://${process.env.CLIENT_AUX_WORKER_HOST}`,
-      CLIENT_BP_WORKER_URL: `https://${process.env.CLIENT_BP_WORKER_HOST}`,
+      CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}CLIENT_AUX_WORKER_HOST`],
+      CLIENT_BP_WORKER_URL:  `https://` + process.env[`${clusterName}CLIENT_BP_WORKER_HOST`],
     },
     secretVars: [
       {
@@ -809,7 +809,7 @@ const clientAppAttr = {
     ],
     command: [],
     repository: process.env.ECR_REPO,
-    imageNameIndex: process.env.CLIENT_IS_ADVERSARY,
+    imageNameIndex: process.env[`${clusterName}CLIENT_IS_ADVERSARY`],
     imageName: ['nightfall-client', 'nightfall-lazy_client'],
     imageTag: process.env.RELEASE,
   },
@@ -823,53 +823,53 @@ const clientAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const clientTxWorkerAppAttr = {
-  nInstances: process.env.CLIENT_N,
+const clientTxWorkerAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}CLIENT_N`],
   // REQUIRED. Application/Task name
-  name: 'client_txw',
-  assignPublicIp: process.env.CLIENT_TX_WORKER_SERVICE_ALB === 'external',
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.CLIENT_N) > 0,
+  name: `${clusterName.toLowerCase()}client_txw`,
+  assignPublicIp: process.env[`${clusterName}CLIENT_TX_WORKER_SERVICE_ALB`] === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env[`${clusterName}CLIENT_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.CLIENT_TX_WORKER_PORT),
-        hostPort: Number(process.env.CLIENT_TX_WORKER_PORT),
+        containerPort: Number(process.env[`${clusterName}CLIENT_TX_WORKER_PORT`]),
+        hostPort: Number(process.env[`${clusterName}CLIENT_TX_WORKER_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.CLIENT_TX_WORKER_SERVICE,
+        hostname: process.env[`${clusterName}CLIENT_TX_WORKER_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
           unhealthyThresholdCount: 10,
           healthyThresholdCount: 2,
           healthyHttpCodes: '200-499',
         },
-        albType: process.env.CLIENT_TX_WORKER_SERVICE_ALB,
+        albType: process.env[`${clusterName}CLIENT_TX_WORKER_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
+      AUTOSTART_RETRIES: process.env[`${clusterName}CLIENT_AUTOSTART_RETRIES`],
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
+      LOG_LEVEL: process.env[`${clusterName}CLIENT_LOG_LEVEL`],
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}CLIENT_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}CLIENT_LOG_HTTP_FULL_DATA`],
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       MONGO_URL: process.env.MONGO_URL,
-      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      CIRCOM_WORKER_HOST: process.env[`${clusterName}CIRCOM_WORKER_HOST`],
       GAS_PRICE: process.env.GAS_PRICE,
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
-      PROTOCOL: process.env.CLIENT_PROTOCOL,
-      COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      PROTOCOL: process.env[`${clusterName}CLIENT_PROTOCOL`],
+      COMMITMENTS_DB: process.env[`${clusterName}CLIENT_COMMITMENTS_DB`],
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
-      CLIENT_TX_WORKER_COUNT: process.env.CLIENT_TX_WORKER_CPU_COUNT,
-      CLIENT_URL: `https://${process.env.CLIENT_HOST}`,
+      CLIENT_TX_WORKER_COUNT: process.env[`${clusterName}CLIENT_TX_WORKER_CPU_COUNT`],
+      CLIENT_URL: `https://` + process.env[`${clusterName}CLIENT_HOST`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
@@ -891,8 +891,8 @@ const clientTxWorkerAppAttr = {
     imageTag: process.env.RELEASE,
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  cpu: process.env.CLIENT_TX_WORKER_CPU_COUNT ? Number(process.env.CLIENT_TX_WORKER_CPU_COUNT ) : 1,
-  desiredCount: Number(process.env.CLIENT_TX_WORKER_N),
+  cpu: process.env[`${clusterName}CLIENT_TX_WORKER_CPU_COUNT`] ? Number(process.env[`${clusterName}CLIENT_TX_WORKER_CPU_COUNT`]) : 1,
+  desiredCount: Number(process.env[`${clusterName}CLIENT_TX_WORKER_N`]),
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -902,52 +902,52 @@ const clientTxWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const clientAuxWorkerAppAttr = {
-  nInstances: process.env.CLIENT_N,
+const clientAuxWorkerAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}CLIENT_N`],
   // REQUIRED. Application/Task name
-  name: 'client_aux',
-  assignPublicIp: process.env.CLIENT_AUX_WORKER_SERVICE_ALB === 'external',
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.CLIENT_N) > 0,
+  name: `${clusterName.toLowerCase()}client_aux`,
+  assignPublicIp: process.env[`${clusterName}CLIENT_AUX_WORKER_SERVICE_ALB`] === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env[`${clusterName}CLIENT_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.CLIENT_AUX_WORKER_PORT),
-        hostPort: Number(process.env.CLIENT_AUX_WORKER_PORT),
+        containerPort: Number(process.env[`${clusterName}CLIENT_AUX_WORKER_PORT`]),
+        hostPort: Number(process.env[`${clusterName}CLIENT_AUX_WORKER_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.CLIENT_AUX_WORKER_SERVICE,
+        hostname: process.env[`${clusterName}CLIENT_AUX_WORKER_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
           unhealthyThresholdCount: 10,
           healthyThresholdCount: 2,
           healthyHttpCodes: '200-499',
         },
-        albType: process.env.CLIENT_AUX_WORKER_SERVICE_ALB,
+        albType: process.env[`${clusterName}CLIENT_AUX_WORKER_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
+      AUTOSTART_RETRIES: process.env[`${clusterName}CLIENT_AUTOSTART_RETRIES`],
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
+      LOG_LEVEL: process.env[`${clusterName}CLIENT_LOG_LEVEL`],
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}CLIENT_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}CLIENT_LOG_HTTP_FULL_DATA`],
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       MONGO_URL: process.env.MONGO_URL,
-      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      CIRCOM_WORKER_HOST: process.env[`${clusterName}CIRCOM_WORKER_HOST`],
       GAS_PRICE: process.env.GAS_PRICE,
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
-      PROTOCOL: process.env.CLIENT_PROTOCOL,
-      COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      PROTOCOL: process.env[`${clusterName}CLIENT_PROTOCOL`],
+      COMMITMENTS_DB: process.env[`${clusterName}CLIENT_COMMITMENTS_DB`],
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
-      CLIENT_AUX_WORKER_COUNT: process.env.CLIENT_AUX_WORKER_CPU_COUNT,
+      CLIENT_AUX_WORKER_COUNT: process.env[`${clusterName}CLIENT_AUX_WORKER_CPU_COUNT`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
@@ -969,8 +969,8 @@ const clientAuxWorkerAppAttr = {
     imageTag: process.env.RELEASE,
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  cpu: process.env.CLIENT_AUX_WORKER_CPU_COUNT ? Number(process.env.CLIENT_AUX_WORKER_CPU_COUNT ) : 1,
-  desiredCount: Number(process.env.CLIENT_AUX_WORKER_N),
+  cpu: process.env[`${clusterName}CLIENT_AUX_WORKER_CPU_COUNT`] ? Number(process.env[`${clusterName}CLIENT_AUX_WORKER_CPU_COUNT`] ) : 1,
+  desiredCount: Number(process.env[`${clusterName}CLIENT_AUX_WORKER_N`]),
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -980,52 +980,52 @@ const clientAuxWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const clientBpWorkerAppAttr = {
-  nInstances: process.env.CLIENT_N,
+const clientBpWorkerAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}CLIENT_N`],
   // REQUIRED. Application/Task name
-  name: 'client_bpw',
-  assignPublicIp: process.env.CLIENT_BP_WORKER_SERVICE_ALB === 'external',
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.CLIENT_N) > 0,
+  name: `${clusterName.toLowerCase()}client_bpw`,
+  assignPublicIp: process.env[`${clusterName}CLIENT_BP_WORKER_SERVICE_ALB`] === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env[`${clusterName}CLIENT_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.CLIENT_BP_WORKER_PORT),
-        hostPort: Number(process.env.CLIENT_BP_WORKER_PORT),
+        containerPort: Number(process.env[`${clusterName}CLIENT_BP_WORKER_PORT`]),
+        hostPort: Number(process.env[`${clusterName}CLIENT_BP_WORKER_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.CLIENT_BP_WORKER_SERVICE,
+        hostname: process.env[`${clusterName}CLIENT_BP_WORKER_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
           unhealthyThresholdCount: 10,
           healthyThresholdCount: 2,
           healthyHttpCodes: '200-499',
         },
-        albType: process.env.CLIENT_BP_WORKER_SERVICE_ALB,
+        albType: process.env[`${clusterName}CLIENT_BP_WORKER_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      AUTOSTART_RETRIES: process.env.CLIENT_AUTOSTART_RETRIES,
+      AUTOSTART_RETRIES: process.env[`${clusterName}CLIENT_AUTOSTART_RETRIES`],
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.CLIENT_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.CLIENT_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.CLIENT_LOG_HTTP_FULL_DATA,
+      LOG_LEVEL: process.env[`${clusterName}CLIENT_LOG_LEVEL`],
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}CLIENT_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}CLIENT_LOG_HTTP_FULL_DATA`],
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       MONGO_URL: process.env.MONGO_URL,
-      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      CIRCOM_WORKER_HOST: process.env[`${clusterName}CIRCOM_WORKER_HOST`],
       GAS_PRICE: process.env.GAS_PRICE,
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
-      PROTOCOL: process.env.CLIENT_PROTOCOL,
-      COMMITMENTS_DB: process.env.COMMITMENTS_DB,
+      PROTOCOL: process.env[`${clusterName}CLIENT_PROTOCOL`],
+      COMMITMENTS_DB: process.env[`${clusterName}CLIENT_COMMITMENTS_DB`],
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
-      CLIENT_AUX_WORKER_URL: `https://${process.env.CLIENT_AUX_WORKER_HOST}`,
+      CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}CLIENT_AUX_WORKER_HOST`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
@@ -1056,37 +1056,37 @@ const clientBpWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const regulatorAppAttr = {
-  nInstances: process.env.REGULATOR_N,
+const regulatorAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}REGULATOR_N`],
   // REQUIRED. Application/Task name
-  name: 'regulator',
-  assignPublicIp: process.env.REGULATOR_SERVICE_ALB === 'external',
-  enable: Number(process.env.REGULATOR_N) > 0,
+  name: `${clusterName.toLowerCase()}regulator`,
+  assignPublicIp: process.env[`${clusterName}REGULATOR_SERVICE_ALB`] === 'external',
+  enable: Number(process.env[`${clusterName}REGULATOR_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.REGULATOR_PORT),
-        hostPort: Number(process.env.REGULATOR_PORT),
+        containerPort: Number(process.env[`${clusterName}REGULATOR_PORT`]),
+        hostPort: Number(process.env[`${clusterName}REGULATOR_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.REGULATOR_SERVICE,
+        hostname: process.env[`${clusterName}REGULATOR_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
           unhealthyThresholdCount: 10,
           healthyThresholdCount: 2,
           healthyHttpCodes: '200-499',
         },
-        albType: process.env.REGULATOR_SERVICE_ALB,
+        albType: process.env[`${clusterName}REGULATOR_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      AUTOSTART_RETRIES: process.env.REGULATOR_AUTOSTART_RETRIES,
+      AUTOSTART_RETRIES: process.env[`${clusterName}REGULATOR_AUTOSTART_RETRIES`],
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.REGULATOR_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.REGULATOR_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.REGULATOR_LOG_HTTP_FULL_DATA,
+      LOG_LEVEL: process.env[`${clusterName}REGULATOR_LOG_LEVEL`],
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}REGULATOR_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}REGULATOR_LOG_HTTP_FULL_DATA`],
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
@@ -1096,14 +1096,14 @@ const regulatorAppAttr = {
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
-      PROTOCOL: process.env.REGULATOR_PROTOCOL,
+      PROTOCOL: process.env[`${clusterName}REGULATOR_PROTOCOL`],
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
-      COMMITMENTS_DB: process.env.REGULATOR_COMMITMENTS_DB,
+      COMMITMENTS_DB: process.env[`${clusterName}REGULATOR_COMMITMENTS_DB`],
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
-      CLIENT_AUX_WORKER_URL: `https://${process.env.REGULATOR_AUX_WORKER_HOST}`,
-      CLIENT_BP_WORKER_URL: `https://${process.env.REGULATOR_BP_WORKER_HOST}`,
+      CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}REGULATOR_AUX_WORKER_HOST`],
+      CLIENT_BP_WORKER_URL:  `https://` + process.env[`${clusterName}REGULATOR_BP_WORKER_HOST`],
     },
     secretVars: [
       {
@@ -1119,7 +1119,7 @@ const regulatorAppAttr = {
       {
         envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
         type: ['secureString'],
-        parameterName: ['regulator_zkp_private_key_ganache'],
+        parameterName: [`${clusterName.toLowerCase()}regulator_zkp_private_key_ganache`],
       },
     ],
     command: [],
@@ -1137,52 +1137,52 @@ const regulatorAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const regulatorAuxWorkerAppAttr = {
-  nInstances: process.env.REGULATOR_N,
+const regulatorAuxWorkerAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}REGULATOR_N`],
   // REQUIRED. Application/Task name
-  name: 'reg_aux',
-  assignPublicIp: process.env.REGULATOR_AUX_WORKER_SERVICE_ALB === 'external',
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.REGULATOR_N) > 0,
+  name: `${clusterName.toLowerCase()}reg_aux`,
+  assignPublicIp: process.env[`${clusterName}REGULATOR_AUX_WORKER_SERVICE_ALB`] === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env[`${clusterName}REGULATOR_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.REGULATOR_AUX_WORKER_PORT),
-        hostPort: Number(process.env.REGULATOR_AUX_WORKER_PORT),
+        containerPort: Number(process.env[`${clusterName}REGULATOR_AUX_WORKER_PORT`]),
+        hostPort: Number(process.env[`${clusterName}REGULATOR_AUX_WORKER_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.REGULATOR_AUX_WORKER_SERVICE,
+        hostname: process.env[`${clusterName}REGULATOR_AUX_WORKER_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
           unhealthyThresholdCount: 10,
           healthyThresholdCount: 2,
           healthyHttpCodes: '200-499',
         },
-        albType: process.env.REGULATOR_AUX_WORKER_SERVICE_ALB,
+        albType: process.env[`${clusterName}REGULATOR_AUX_WORKER_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      AUTOSTART_RETRIES: process.env.REGULATOR_AUTOSTART_RETRIES,
+      AUTOSTART_RETRIES: process.env[`${clusterName}REGULATOR_AUTOSTART_RETRIES`],
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.REGULATOR_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.REGULATOR_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.REGULATOR_LOG_HTTP_FULL_DATA,
+      LOG_LEVEL: process.env[`${clusterName}REGULATOR_LOG_LEVEL`],
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}REGULATOR_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}REGULATOR_LOG_HTTP_FULL_DATA`],
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       MONGO_URL: process.env.MONGO_URL,
-      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      CIRCOM_WORKER_HOST: process.env[`${clusterName}CIRCOM_WORKER_HOST`],
       GAS_PRICE: process.env.GAS_PRICE,
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
-      PROTOCOL: process.env.REGULATOR_PROTOCOL,
-      COMMITMENTS_DB: process.env.REGULATOR_COMMITMENTS_DB,
+      PROTOCOL: process.env[`${clusterName}REGULATOR_PROTOCOL`],
+      COMMITMENTS_DB: process.env[`${clusterName}REGULATOR_COMMITMENTS_DB`],
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
-      CLIENT_AUX_WORKER_COUNT: process.env.REGULATOR_AUX_WORKER_CPU_COUNT,
+      CLIENT_AUX_WORKER_COUNT: process.env[`${clusterName}REGULATOR_AUX_WORKER_CPU_COUNT`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
@@ -1200,7 +1200,7 @@ const regulatorAuxWorkerAppAttr = {
       {
         envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
         type: ['secureString'],
-        parameterName: ['regulator_zkp_private_key_ganache'],
+        parameterName: [`${clusterName.toLowerCase()}regulator_zkp_private_key_ganache`],
       },
     ],
     command: [],
@@ -1209,8 +1209,8 @@ const regulatorAuxWorkerAppAttr = {
     imageTag: process.env.RELEASE,
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  cpu: process.env.REGULATOR_AUX_WORKER_CPU_COUNT ? Number(process.env.REGULATOR_AUX_WORKER_CPU_COUNT ) : 1,
-  desiredCount: Number(process.env.REGULATOR_AUX_WORKER_N),
+  cpu: process.env[`${clusterName}REGULATOR_AUX_WORKER_CPU_COUNT`] ? Number(process.env[`${clusterName}REGULATOR_AUX_WORKER_CPU_COUNT`] ) : 1,
+  desiredCount: Number(process.env[`${clusterName}REGULATOR_AUX_WORKER_N`]),
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -1220,52 +1220,52 @@ const regulatorAuxWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
-const regulatorBpWorkerAppAttr = {
-  nInstances: process.env.REGULATOR_N,
+const regulatorBpWorkerAppAttr = clusterName => ({
+  nInstances: process.env[`${clusterName}REGULATOR_N`],
   // REQUIRED. Application/Task name
-  name: 'reg_bpw',
-  assignPublicIp: process.env.REGULATOR_BP_WORKER_SERVICE_ALB === 'external',
-  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env.REGULATOR_N) > 0,
+  name: `${clusterName.toLowerCase()}reg_bpw`,
+  assignPublicIp: process.env[`${clusterName}REGULATOR_BP_WORKER_SERVICE_ALB`] === 'external',
+  enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env[`${clusterName}REGULATOR_N`]) > 0,
   // Specify Container and container image information
   containerInfo: {
     portInfo: [
       {
-        containerPort: Number(process.env.REGULATOR_BP_WORKER_PORT),
-        hostPort: Number(process.env.REGULATOR_BP_WORKER_PORT),
+        containerPort: Number(process.env[`${clusterName}REGULATOR_BP_WORKER_PORT`]),
+        hostPort: Number(process.env[`${clusterName}REGULATOR_BP_WORKER_PORT`]),
         // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.REGULATOR_BP_WORKER_SERVICE,
+        hostname: process.env[`${clusterName}REGULATOR_BP_WORKER_SERVICE`],
         healthcheck: {
           path: '/healthcheck',
           unhealthyThresholdCount: 10,
           healthyThresholdCount: 2,
           healthyHttpCodes: '200-499',
         },
-        albType: process.env.REGULATOR_BP_WORKER_SERVICE_ALB,
+        albType: process.env[`${clusterName}REGULATOR_BP_WORKER_SERVICE_ALB`],
       },
     ],
     environmentVars: {
-      AUTOSTART_RETRIES: process.env.REGULATOR_AUTOSTART_RETRIES,
+      AUTOSTART_RETRIES: process.env[`${clusterName}REGULATOR_AUTOSTART_RETRIES`],
       GAS: process.env.GAS_CLIENT,
-      LOG_LEVEL: process.env.REGULATOR_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.REGULATOR_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.REGULATOR_LOG_HTTP_FULL_DATA,
+      LOG_LEVEL: process.env[`${clusterName}REGULATOR_LOG_LEVEL`],
+      LOG_HTTP_PAYLOAD_ENABLED: process.env[`${clusterName}REGULATOR_LOG_HTTP_PAYLOAD_ENABLED`],
+      LOG_HTTP_FULL_DATA: process.env[`${clusterName}REGULATOR_LOG_HTTP_FULL_DATA`],
       BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
       BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       MONGO_URL: process.env.MONGO_URL,
-      CIRCOM_WORKER_HOST: process.env.CIRCOM_WORKER_HOST,
+      CIRCOM_WORKER_HOST: process.env[`${clusterName}CIRCOM_WORKER_HOST`],
       GAS_PRICE: process.env.GAS_PRICE,
       STATE_GENESIS_BLOCK: process.env.STATE_GENESIS_BLOCK,
       ETH_ADDRESS: process.env.DEPLOYER_ADDRESS,
       DEPLOYER_ETH_NETWORK: process.env.DEPLOYER_ETH_NETWORK,
-      PROTOCOL: process.env.REGULATOR_PROTOCOL,
-      COMMITMENTS_DB: process.env.REGULATOR_COMMITMENTS_DB,
+      PROTOCOL: process.env[`${clusterName}REGULATOR_PROTOCOL`],
+      COMMITMENTS_DB: process.env[`${clusterName}REGULATOR_COMMITMENTS_DB`],
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       ENVIRONMENT: 'aws',
       ENABLE_QUEUE: process.env.ENABLE_QUEUE,
-      CLIENT_AUX_WORKER_URL: `https://${process.env.REGULATOR_AUX_WORKER_HOST}`,
+      CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}REGULATOR_AUX_WORKER_HOST`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
@@ -1283,7 +1283,7 @@ const regulatorBpWorkerAppAttr = {
       {
         envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
         type: ['secureString'],
-        parameterName: ['regulator_zkp_private_key_ganache'],
+        parameterName: [`${clusterName.toLowerCase()}regulator_zkp_private_key_ganache`],
       },
     ],
     command: [],
@@ -1301,7 +1301,7 @@ const regulatorBpWorkerAppAttr = {
       containerPath: '/app/build',
     },
   ],
-};
+});
 
 const appsAttr = [
   gethAppAttr,

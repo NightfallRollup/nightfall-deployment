@@ -27,11 +27,15 @@ if  [ "$#" -ne 1 ]; then
   exit 1
 fi
 
+if [ -z "${CLUSTER}" ]; then
+  CLUSTER=Apps
+fi
+
 SELECTED_SERVICE=$1
 
 declare -a DISCOVERED_TASKS=()
 # Get Cluster ARN
-CLUSTER_ARN=$(aws ecs list-clusters | jq '.clusterArns[]' | grep ${ENVIRONMENT_NAME} | grep Apps | tr -d '"')
+CLUSTER_ARN=$(aws ecs list-clusters --region $REGION | jq '.clusterArns[]' | grep ${ENVIRONMENT_NAME} | grep ${CLUSTER} | tr -d '"')
 if [ -z "${CLUSTER_ARN}" ]; then
   echo "Cluster not found"
   exit 0;
