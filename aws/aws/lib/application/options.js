@@ -703,7 +703,7 @@ const dashboardAppAttr = clusterName => ({
 const circomWorkerAppAttr = clusterName => ({
   nInstances: process.env[`${clusterName}CLIENT_N`],
   // REQUIRED. Application/Task name
-  name: `${clusterName.toLowerCase()}.circomWorker`,
+  name: `${clusterName.toLowerCase()}circomWorker`,
   assignPublicIp: false,
   enable: Number(process.env[`${clusterName}CLIENT_N`]) > 0,
   // Specify Container and container image information
@@ -1119,7 +1119,7 @@ const regulatorAppAttr = clusterName => ({
       {
         envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
         type: ['secureString'],
-        parameterName: [`${clusterName}regulator_zkp_private_key_ganache`],
+        parameterName: [`${clusterName.toLowerCase()}regulator_zkp_private_key_ganache`],
       },
     ],
     command: [],
@@ -1142,7 +1142,7 @@ const regulatorAppAttr = clusterName => ({
 const regulatorAuxWorkerAppAttr = clusterName => ({
   nInstances: process.env[`${clusterName}REGULATOR_N`],
   // REQUIRED. Application/Task name
-  name: 'reg_aux',
+  name: `${clusterName.toLowerCase()}reg_aux`,
   assignPublicIp: process.env[`${clusterName}REGULATOR_AUX_WORKER_SERVICE_ALB`] === 'external',
   enable: process.env.NIGHTFALL_LEGACY !== 'true' && Number(process.env[`${clusterName}REGULATOR_N`]) > 0,
   // Specify Container and container image information
@@ -1200,7 +1200,7 @@ const regulatorAuxWorkerAppAttr = clusterName => ({
       {
         envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
         type: ['secureString'],
-        parameterName: [`${clusterName}regulator_zkp_private_key_ganache`],
+        parameterName: [`${clusterName.toLowerCase()}regulator_zkp_private_key_ganache`],
       },
     ],
     command: [],
@@ -1283,7 +1283,7 @@ const regulatorBpWorkerAppAttr = clusterName => ({
       {
         envName: ['NIGHTFALL_REGULATOR_PRIVATE_KEY'],
         type: ['secureString'],
-        parameterName: [`${clusterName}regulator_zkp_private_key_ganache`],
+        parameterName: [`${clusterName.toLowerCase()}regulator_zkp_private_key_ganache`],
       },
     ],
     command: [],

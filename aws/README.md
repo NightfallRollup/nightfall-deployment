@@ -411,7 +411,7 @@ RELEASE=xxx CLUSTER=yyy make add-cluster
 ```
 where `yyy` is the name of the new cluster. By default, this command will generate infrastructure
 to deploy a new client and a new regulator. Code will be automatically generated and added to xxx.env file.
-It is up to you to customize.
+It is up to you to customize the new client and regulator parameters.
 
 **NOTE** Adding a new client in a cluster also generates new keys for regulator. They are automatically added 
 to the ssm paramstore

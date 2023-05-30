@@ -26,56 +26,21 @@ else
   SECRETS_ENV=../env/secrets.env
 fi
 source ${SECRETS_ENV}
-set +o allexport
 
+### Set cluster variables
 _CLUSTER=${CLUSTER}
 if [ "${CLUSTER}" ]; then
   _CLUSTER="${CLUSTER^^}_"
 fi
 
+CLUSTER=${CLUSTER} ./create-cluster-envfile.sh
+source ../env/cluster.env
+
+set +o allexport
+
 # Check Web3 is running
 set +e
-
-### Set cluster variables
-set -x
-
-eval "$_OPTIMIST_N"='$'{_CLUSTER}'$'{OPTIMIST_N}
-eval "$_OPTIMIST_TX_WORKER_N"='$'{_CLUSTER}'$'{OPTIMIST_TX_WORKER_N}
-eval "$_OPTIMIST_HTTP_HOST"='$'{_CLUSTER}'$'{OPTIMIST_HTTP_HOST}
-eval "$_OPTIMIST_TX_WORKER_HOST"='$'{_CLUSTER}'$'{OPTIMIST_TX_WORKER_HOST}
-eval "$_OPTIMIST_BP_WORKER_HOST"='$'{_CLUSTER}'$'{OPTIMIST_BP_WORKER_HOST}
-eval "$_OPTIMIST_BA_WORKER_HOST"='$'{_CLUSTER}'$'{OPTIMIST_BA_WORKER_HOST}
-
-eval "$_PROPOSER_N"='$'{_CLUSTER}'$'{PROPOSER_N}
-eval "$_PROPOSER_HOST"='$'{_CLUSTER}'$'{PROPOSER_HOST}
-
-eval "$_CHALLENGER_N"='$'{_CLUSTER}'$'{CHALLENGER_N}
-eval "$_CHALLENGER_HOST"='$'{_CLUSTER}'$'{CHALLENGER_HOST}
-
-eval "$_PUBLISHER_ENABLE"='$'{_CLUSTER}'$'{PUBLISHER_ENABLE}
-eval "$_PUBLISHER_HOST"='$'{_CLUSTER}'$'{PUBLISHER_HOST}
-
-eval "$_DASHBOARD_ENABLE"='$'{_CLUSTER}'$'{DASHBOARD_ENABLE}
-eval "$_DASHBOARD_HOST"='$'{_CLUSTER}'$'{DASHBOARD_HOST}
-
-eval "$_CLIENT_N"='$'{_CLUSTER}'$'{CLIENT_N}
-eval "$_CLIENT_AUX_WORKER_N"='$'{_CLUSTER}'$'{CLIENT_AUX_WORKER_N}
-eval "$_CLIENT_TX_WORKER_N"='$'{_CLUSTER}'$'{CLIENT_TX_WORKER_N}
-eval "$_CIRCOM_WORKER_N"='$'{_CLUSTER}'$'{CIRCOM_WORKER_N}
-eval "$_CLIENT_HOST"='$'{_CLUSTER}'$'{CLIENT_HOST}
-eval "$_CLIENT_AUX_WORKER_HOST"='$'{_CLUSTER}'$'{CLIENT_AUX_WORKER_HOST}
-eval "$_CLIENT_BP_WORKER_HOST"='$'{_CLUSTER}'$'{CLIENT_BP_WORKER_HOST}
-eval "$_CLIENT_TX_WORKER_HOST"='$'{_CLUSTER}'$'{CLIENT_TX_WORKER_HOST}
-eval "$_CIRCOM_WORKER_HOST"='$'{_CLUSTER}'$'{CIRCOM_WORKER_HOST}
-
-eval "$_REGULATOR_N"='$'{_CLUSTER}'$'{REGULATOR_N}
-eval "$_REGULATOR_HOST"='$'{_CLUSTER}'$'{REGULATOR_HOST}
-eval "$_REGULATOR_AUX_WORKER_N"='$'{_CLUSTER}'$'{REGULATOR_AUX_WORKER_N}
-eval "$_REGULATOR_AUX_WORKER_HOST"='$'{_CLUSTER}'$'{REGULATOR_AUX_WORKER_HOST}
-eval "$_REGULATOR_BP_WORKER_HOST"='$'{_CLUSTER}'$'{REGULATOR_BP_WORKER_HOST}
-
 #############
-
 while true; do
   echo "Waiting for connection with ${BLOCKCHAIN_WS_HOST}..."
   WEB3_RESPONSE=$(curl -f --write-out '%{http_code}' --silent --output output.txt \
