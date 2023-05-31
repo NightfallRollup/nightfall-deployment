@@ -107,28 +107,58 @@ if [ -z "${CLIENT}" ]; then
 	    RELEASE=${RELEASE} ./start-service.sh clientbpw
     fi
   fi
+  
+  ### Set cluster variables
+  _CLUSTER=${CLUSTER}
+  if [ "${CLUSTER}" ]; then
+    _CLUSTER="${CLUSTER^^}_"
+  fi
+
+  set -o allexport
+  CLUSTER=${CLUSTER} ./create-cluster-envfile.sh
+  source ../env/cluster.env
+  set +o allexport
+
   while true; do
     CLIENT1_CHECK=$(curl https://"${CLIENT_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-    CLIENT2_CHECK=$(curl https://"${CLIENT_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    CLIENT2_CHECK=$(curl https://"${_CLIENT_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+    REGULATOR1_CHECK=$(curl https://"${REGULATOR_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    REGULATOR2_CHECK=$(curl https://"${_REGULATOR_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${NIGHTFALL_LEGACY}" != "true" ]; then
       CLIENT1_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-      CLIENT2_TXW_CHECK=$(curl https://"${CLIENT_TX_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      CLIENT2_TXW_CHECK=$(curl https://"${_CLIENT_TX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
       CLIENT1_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-      CLIENT2_BPW_CHECK=$(curl https://"${CLIENT_BP_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      CLIENT2_BPW_CHECK=$(curl https://"${_CLIENT_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      CLIENT1_AUXW_CHECK=$(curl https://"${CLIENT_AUX_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      CLIENT2_AUXW_CHECK=$(curl https://"${_CLIENT_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+
+      REGULATOR1_BPW_CHECK=$(curl https://"${REGULATOR_BP_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      REGULATOR2_BPW_CHECK=$(curl https://"${_REGULATOR_BP_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
+      REGULATOR1_AUXW_CHECK=$(curl https://"${REGULATOR_AUX_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+      REGULATOR2_AUXW_CHECK=$(curl https://"${_REGULATOR_AUX_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     else
       CLIENT1_TXW_CHECK=1
       CLIENT2_TXW_CHECK=1
       CLIENT1_BPW_CHECK=1
       CLIENT2_BPW_CHECK=1
+      CLIENT1_AUXW_CHECK=1
+      CLIENT2_AUXW_CHECK=1
+
+      REGULATOR1_BPW_CHECK=1
+      REGULATOR2_BPW_CHECK=1
+      REGULATOR1_AUXW_CHECK=1
+      REGULATOR2_AUXW_CHECK=1
     fi
     WORKER1_CHECK=$(curl https://"${CIRCOM_WORKER_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
-    WORKER2_CHECK=$(curl https://"${CIRCOM_WORKER_SERVICE}2.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
+    WORKER2_CHECK=$(curl https://"${_CIRCOM_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     MONGO_CONNECTION_STRING="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_URL}:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
     #if [[ ("${CLIENT1_CHECK}") && ("${CLIENT2_CHECK}") && ("${WORKER1_CHECK}") && ("${WORKER2_CHECK}") ]]; then
-    if [[ ("${CLIENT1_CHECK}") && ("${WORKER1_CHECK}") && ("${CLIENT1_TXW_CHECK}") && (${CLIENT1_BPW_CHECK}) ]]; then
+    if [[ ("${CLIENT1_CHECK}") && ("${WORKER1_CHECK}") && ("${CLIENT1_TXW_CHECK}") && (${CLIENT1_BPW_CHECK}) && (${CLIENT1_AUXW_CHECK}) ]] && \
+       [[ ("${REGULATOR1_CHECK}") && (${REGULATOR1_BPW_CHECK}) && (${REGULATOR1_AUXW_CHECK}) ]]; then
         cd ../nightfall_3 && ENVIRONMENT=aws \
          LAUNCH_LOCAL='' \
          CLIENT2_CHECK=${CLIENT2_CHECK} \
+         REGULATOR2_CHECK=${REGULATOR2_CHECK} \
          USER1_MNEMONIC=${USER1_MNEMONIC} \
          USER1_KEY=${USER1_KEY} \
          USER2_MNEMONIC=${USER2_MNEMONIC} \
@@ -139,6 +169,13 @@ if [ -z "${CLIENT}" ]; then
          MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD}  \
          MONGO_CONNECTION_STRING="${MONGO_CONNECTION_STRING}" \
          RLN_TOKEN_ADDRESS=${RLN_TOKEN_ADDRESS} \
+         CLIENT2_HOST=https://${_CLIENT_HOST} \
+         CLIENT2_TX_WORKER_HOST=https://${_CLIENT_TX_WORKER_HOST} \
+         CLIENT2_BP_WORKER_HOST=https://${_CLIENT_BP_WORKER_HOST} \
+         REGULATOR1_HOST=https://${REGULATOR_SERVICE}.${DOMAIN_NAME} \
+         REGULATOR2_HOST=https://${_REGULATOR_HOST} \
+         REGULATOR1_BP_WORKER_HOST=https://${REGULATOR_BP_WORKER_SERVICE}.${DOMAIN_NAME} \
+         REGULATOR2_BP_WORKER_HOST=https://${_REGULATOR_BP_WORKER_HOST} \
          npx hardhat test --bail --no-compile ${TEST_FILE}
         break
     fi
@@ -146,11 +183,14 @@ if [ -z "${CLIENT}" ]; then
     sleep 4
   done
 else
+  echo "Local client not supported. Exiting..."
+  exit 1
   MONGO_CONNECTION_STRING="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_URL}:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
   while true; do
     CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
     CLIENT_TX_WORKER=$(docker inspect client-txw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
     CLIENT_BP_WORKER=$(docker inspect client-bpw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+    REGULATOR_CHECK=$(curl https://"${REGULATOR_SERVICE}.${DOMAIN_NAME}"/healthcheck 2> /dev/null | grep OK || true)
     if [ "${CLIENT}" ]; then
       HCHECK=$(curl "http://${CLIENT}:80/healthcheck" 2> /dev/null)
       if [ "${HCHECK}" ]; then

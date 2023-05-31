@@ -5,9 +5,15 @@ Module that runs up as a user
 /* eslint-disable no-await-in-loop */
 
 import config from 'config';
+import axios from 'axios';
 import logger from '@polygon-nightfall/common-files/utils/logger.mjs';
 import Nf3 from '../../cli/lib/nf3.mjs';
-import { waitForSufficientBalance, retrieveL2Balance, Web3Client } from '../utils.mjs';
+import {
+  waitForSufficientBalance,
+  retrieveL2Balance,
+  Web3Client,
+  waitForTimeout,
+} from '../utils.mjs';
 
 const { mnemonics, signingKeys, zkpPublicKeys } = config.TEST_OPTIONS;
 
@@ -20,7 +26,7 @@ const TEST_LENGTH = 4;
 /**
 Does the preliminary setup and starts listening on the websocket
 */
-export default async function localTest(IS_TEST_RUNNER, environment) {
+export default async function localTest(IS_TEST_RUNNER, environment, regulatorUrl, regulatorBpUrl) {
   logger.info('Starting local test...');
   const tokenType = 'ERC20';
   const depositValue = 100;
@@ -46,6 +52,7 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
 
   const startBalance = await retrieveL2Balance(nf3, ercAddress);
   console.log('start balance', startBalance);
+  console.log('Regulator Urls', regulatorUrl, regulatorBpUrl);
 
   let offchainTx = !!IS_TEST_RUNNER;
   // Create a block of deposits
@@ -57,7 +64,8 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
       logger.warn(`Error in deposit 1 ${err}`);
     }
   }
-
+  const regulatorCommitmentsBefore = (await axios.get(`${regulatorUrl}/commitment/`)).data
+    .allCommitments.length;
   // Create a block of transfer and deposit transactions
   for (let i = 0; i < TEST_LENGTH; i++) {
     await waitForSufficientBalance({
@@ -75,6 +83,9 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
           tokenId,
           IS_TEST_RUNNER ? zkpPublicKeys.user2 : zkpPublicKeys.user1,
           0,
+          [],
+          [],
+          IS_TEST_RUNNER ? regulatorBpUrl : '', // only regulator2 active
         );
       } catch (err) {
         if (err.message.includes('No suitable commitments')) {
@@ -94,6 +105,9 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
             tokenId,
             IS_TEST_RUNNER ? zkpPublicKeys.user2 : zkpPublicKeys.user1,
             0,
+            [],
+            [],
+            IS_TEST_RUNNER ? regulatorBpUrl : '', // only regulator2 active
           );
         }
       }
@@ -115,8 +129,11 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
   if (IS_TEST_RUNNER) loopMax = 100; // the TEST_RUNNER must finish first so that its exit status is returned to the tester
   do {
     const endBalance = await retrieveL2Balance(nf3, ercAddress);
+    const regulatorCommitmentsAfter = (await axios.get(`${regulatorUrl}/commitment/`)).data
+      .allCommitments.length;
     if (
       endBalance - startBalance === txPerBlock * depositValue + depositValue * TEST_LENGTH &&
+      regulatorCommitmentsAfter === regulatorCommitmentsBefore + TEST_LENGTH &&
       IS_TEST_RUNNER
     ) {
       logger.info('Test passed');
@@ -124,6 +141,11 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
         `Balance of User (txPerBlock*value (txPerBlock*1) + value received) :
         ${endBalance - startBalance}`,
       );
+      logger.info({
+        msg: 'Balance of Regulator :',
+        expected: regulatorCommitmentsBefore + TEST_LENGTH,
+        actual: regulatorCommitmentsAfter,
+      });
       logger.info(`Amount sent to other User: ${transferValue * TEST_LENGTH}`);
       nf3.close();
       process.exit(0);
@@ -134,6 +156,13 @@ export default async function localTest(IS_TEST_RUNNER, environment) {
           txPerBlock * depositValue + depositValue * TEST_LENGTH
         }`,
       );
+      if (IS_TEST_RUNNER) {
+        logger.info({
+          msg: 'Balance of Regulator :',
+          expected: regulatorCommitmentsBefore + TEST_LENGTH,
+          actual: regulatorCommitmentsAfter,
+        });
+      }
       await new Promise(resolving => setTimeout(resolving, 20 * TX_WAIT)); // TODO get balance waiting working well
       loop++;
     }
