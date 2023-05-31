@@ -66,6 +66,7 @@ const {
   DASHBOARD_TEST_ENABLE,
   OPTIMIST_STATS_CHECK_PERIOD_MIN,
   OPTIMIST_STATS_STATUS_COUNT_ALARM,
+  DASHBOARD_CLUSTERS,
 } = process.env;
 
 // If we are running test, limit refresh update
@@ -108,47 +109,51 @@ function sortObj(obj) {
 /*
   Check if Fargate tasks' health check can be accessed
 */
-async function checkFargateStatus(appsAttr, lastRecord) {
+async function checkFargateStatus(appsAttr, clusterNames, lastRecord) {
   const fargateStatus = typeof lastRecord === 'undefined' ? {} : { ...lastRecord.fargateStatus };
   fargateStatus.timestamp = Date.now();
-  for (const attr of appsAttr) {
-    if (!attr.enable) continue;
-    const containerInfo =
-      typeof attr.containerInfo === 'undefined' ? [attr] : attr.containerInfo.portInfo;
-    for (const containerAttr of containerInfo) {
-      const { hostname, healthcheck } = containerAttr;
-      if (typeof hostname === 'undefined') continue;
-      const taskStatus =
-        typeof lastRecord === 'undefined' ||
-        typeof lastRecord.fargateStatus[hostname] === 'undefined'
-          ? { statusCountError: 0 }
-          : lastRecord.fargateStatus[hostname];
-      const { path = '' } = healthcheck;
-      try {
-        taskStatus.hostname = hostname;
-        if (hostname.includes('web3-ws')) {
-          const socket = new WebSocket(BLOCKCHAIN_URL);
-          await waitForOpenConnection(socket);
-          taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
-        } else if (hostname.includes('ws')) {
-          const socket = new WebSocket(`wss://${hostname}.${DOMAIN_NAME}`);
-          await waitForOpenConnection(socket);
-          taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
-        } else {
-          const res = await axios.get(`https://${hostname}.${DOMAIN_NAME}${path}`);
-          taskStatus.status = res.status === 200 ? 'OK' : 'KO';
+  for (const clusterName of clusterNames) {
+    for (const appAttr of appsAttr) {
+      const attr = appAttr(clusterName);
+      console.log('Cluster Name:', clusterName);
+      if (!attr.enable) continue;
+      const containerInfo =
+        typeof attr.containerInfo === 'undefined' ? [attr] : attr.containerInfo.portInfo;
+      for (const containerAttr of containerInfo) {
+        const { hostname, healthcheck } = containerAttr;
+        if (typeof hostname === 'undefined') continue;
+        const taskStatus =
+          typeof lastRecord === 'undefined' ||
+          typeof lastRecord.fargateStatus[hostname] === 'undefined'
+            ? { statusCountError: 0 }
+            : lastRecord.fargateStatus[hostname];
+        const { path = '' } = healthcheck;
+        try {
+          taskStatus.hostname = hostname;
+          if (hostname.includes('web3-ws')) {
+            const socket = new WebSocket(BLOCKCHAIN_URL);
+            await waitForOpenConnection(socket);
+            taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
+          } else if (hostname.includes('ws')) {
+            const socket = new WebSocket(`wss://${hostname}.${DOMAIN_NAME}`);
+            await waitForOpenConnection(socket);
+            taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
+          } else {
+            const res = await axios.get(`https://${hostname}.${DOMAIN_NAME}${path}`);
+            taskStatus.status = res.status === 200 ? 'OK' : 'KO';
+          }
+        } catch (err) {
+          taskStatus.status = 'KO';
+          taskStatus.statusError = err.message;
         }
-      } catch (err) {
-        taskStatus.status = 'KO';
-        taskStatus.statusError = err.message;
+        if (taskStatus.status === 'KO') {
+          taskStatus.statusCountError++;
+        } else {
+          taskStatus.statusCountError = 0;
+          taskStatus.statusError = '';
+        }
+        fargateStatus[hostname] = taskStatus;
       }
-      if (taskStatus.status === 'KO') {
-        taskStatus.statusCountError++;
-      } else {
-        taskStatus.statusCountError = 0;
-        taskStatus.statusError = '';
-      }
-      fargateStatus[hostname] = taskStatus;
     }
   }
   return fargateStatus;
@@ -704,12 +709,17 @@ async function pollAlarms() {
   lastRecord = (
     await dashboardCollection.find().sort({ 'fargateStatus.timestamp': -1 }).limit(1).toArray()
   )[0];
+  const clusterNames = DASHBOARD_CLUSTERS === '' ? [] : DASHBOARD_CLUSTERS.split(' ');
   // Check fargate tasks
   if (
     typeof lastRecord === 'undefined' ||
     now - lastRecord.fargateStatus.timestamp >= FARGATE_CHECK_PERIOD_MIN * MILITOMINUTES
   ) {
-    status.fargateStatus = await checkFargateStatus([...appsAttr, ...ec2InstancesAttr], lastRecord);
+    status.fargateStatus = await checkFargateStatus(
+      [...appsAttr, ...ec2InstancesAttr],
+      clusterNames.push(''),
+      lastRecord,
+    );
     alarms.fargateAlarm = await setAlarmsFargate(status);
   } else {
     status.fargateStatus = lastRecord.fargateStatus;
@@ -774,8 +784,10 @@ async function pollAlarms() {
 
   // Check DynamoDb
   if (
-    typeof lastRecord === 'undefined' ||
-    now - lastRecord.dynamoDbStatus.timestamp >= Number(DYNAMODB_CHECK_PERIOD_MIN) * MILITOMINUTES
+    Number(DYNAMODB_CHECK_PERIOD_MIN) &&
+    (typeof lastRecord === 'undefined' ||
+      now - lastRecord.dynamoDbStatus.timestamp >=
+        Number(DYNAMODB_CHECK_PERIOD_MIN) * MILITOMINUTES)
   ) {
     status.dynamoDbStatus = await checkDynamoDbStatus(lastRecord);
     if (typeof lastRecord !== 'undefined') {
@@ -787,10 +799,11 @@ async function pollAlarms() {
 
   // Check Publisher Stats
   if (
-    typeof lastRecord === 'undefined' ||
-    typeof lastRecord.publisherStats === 'undefined' ||
-    now - lastRecord.publisherStats.timestamp >=
-      Number(PUBLISHER_STATS_CHECK_PERIOD_MIN) * MILITOMINUTES
+    Number(PUBLISHER_STATS_CHECK_PERIOD_MIN) &&
+    (typeof lastRecord === 'undefined' ||
+      typeof lastRecord.publisherStats === 'undefined' ||
+      now - lastRecord.publisherStats.timestamp >=
+        Number(PUBLISHER_STATS_CHECK_PERIOD_MIN) * MILITOMINUTES)
   ) {
     status.publisherStats = await checkPublisherStats(lastRecord);
     if (typeof lastRecord !== 'undefined') {
@@ -873,8 +886,13 @@ async function stop() {
  Publish metrics to AWS CloudWatch
 */
 function publishMetricsAws(status) {
-  const { blockchainStatus, documentDbStatus, dynamoDbStatus, publisherStats, optimistStats } =
-    status;
+  const {
+    blockchainStatus,
+    documentDbStatus,
+    dynamoDbStatus,
+    publisherStats,
+    optimistStats,
+  } = status;
 
   // Balances
   createCwMetric({
