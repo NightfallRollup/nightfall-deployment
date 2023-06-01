@@ -38,6 +38,7 @@ const {
   ALARMS_COLLECTION,
   SUBMITTED_BLOCKS_COLLECTION,
   TRANSACTIONS_COLLECTION,
+  INVALID_BLOCKS_COLLECTION,
   DASHBOARD_DB,
   BOOT_PROPOSER_ADDRESS,
   BOOT_CHALLENGER_ADDRESS,
@@ -66,6 +67,7 @@ const {
   DASHBOARD_TEST_ENABLE,
   OPTIMIST_STATS_CHECK_PERIOD_MIN,
   OPTIMIST_STATS_STATUS_COUNT_ALARM,
+  DASHBOARD_CLUSTERS,
 } = process.env;
 
 // If we are running test, limit refresh update
@@ -108,47 +110,50 @@ function sortObj(obj) {
 /*
   Check if Fargate tasks' health check can be accessed
 */
-async function checkFargateStatus(appsAttr, lastRecord) {
+async function checkFargateStatus(appsAttr, clusterNames, lastRecord) {
   const fargateStatus = typeof lastRecord === 'undefined' ? {} : { ...lastRecord.fargateStatus };
   fargateStatus.timestamp = Date.now();
-  for (const attr of appsAttr) {
-    if (!attr.enable) continue;
-    const containerInfo =
-      typeof attr.containerInfo === 'undefined' ? [attr] : attr.containerInfo.portInfo;
-    for (const containerAttr of containerInfo) {
-      const { hostname, healthcheck } = containerAttr;
-      if (typeof hostname === 'undefined') continue;
-      const taskStatus =
-        typeof lastRecord === 'undefined' ||
-        typeof lastRecord.fargateStatus[hostname] === 'undefined'
-          ? { statusCountError: 0 }
-          : lastRecord.fargateStatus[hostname];
-      const { path = '' } = healthcheck;
-      try {
-        taskStatus.hostname = hostname;
-        if (hostname.includes('web3-ws')) {
-          const socket = new WebSocket(BLOCKCHAIN_URL);
-          await waitForOpenConnection(socket);
-          taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
-        } else if (hostname.includes('ws')) {
-          const socket = new WebSocket(`wss://${hostname}.${DOMAIN_NAME}`);
-          await waitForOpenConnection(socket);
-          taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
-        } else {
-          const res = await axios.get(`https://${hostname}.${DOMAIN_NAME}${path}`);
-          taskStatus.status = res.status === 200 ? 'OK' : 'KO';
+  for (const clusterName of clusterNames) {
+    for (const appAttr of appsAttr) {
+      const attr = appAttr(clusterName);
+      if (!attr.enable) continue;
+      const containerInfo =
+        typeof attr.containerInfo === 'undefined' ? [attr] : attr.containerInfo.portInfo;
+      for (const containerAttr of containerInfo) {
+        const { hostname, healthcheck } = containerAttr;
+        if (typeof hostname === 'undefined') continue;
+        const taskStatus =
+          typeof lastRecord === 'undefined' ||
+          typeof lastRecord.fargateStatus[hostname] === 'undefined'
+            ? { statusCountError: 0 }
+            : lastRecord.fargateStatus[hostname];
+        const { path = '' } = healthcheck;
+        try {
+          taskStatus.hostname = hostname;
+          if (hostname.includes('web3-ws')) {
+            const socket = new WebSocket(BLOCKCHAIN_URL);
+            await waitForOpenConnection(socket);
+            taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
+          } else if (hostname.includes('ws')) {
+            const socket = new WebSocket(`wss://${hostname}.${DOMAIN_NAME}`);
+            await waitForOpenConnection(socket);
+            taskStatus.status = socket.readyState === WebSocket.OPEN ? 'OK' : 'KO';
+          } else {
+            const res = await axios.get(`https://${hostname}.${DOMAIN_NAME}${path}`);
+            taskStatus.status = res.status === 200 ? 'OK' : 'KO';
+          }
+        } catch (err) {
+          taskStatus.status = 'KO';
+          taskStatus.statusError = err.message;
         }
-      } catch (err) {
-        taskStatus.status = 'KO';
-        taskStatus.statusError = err.message;
+        if (taskStatus.status === 'KO') {
+          taskStatus.statusCountError++;
+        } else {
+          taskStatus.statusCountError = 0;
+          taskStatus.statusError = '';
+        }
+        fargateStatus[hostname] = taskStatus;
       }
-      if (taskStatus.status === 'KO') {
-        taskStatus.statusCountError++;
-      } else {
-        taskStatus.statusCountError = 0;
-        taskStatus.statusError = '';
-      }
-      fargateStatus[hostname] = taskStatus;
     }
   }
   return fargateStatus;
@@ -310,28 +315,14 @@ async function checkDocumentDbStatus(lastRecord) {
 
     documentDbStatus.nL2Blocks = await blocksCollection.estimatedDocumentCount();
     documentDbStatus.nL2Tx = await transactionsCollection.estimatedDocumentCount();
-    documentDbStatus.nL2TxDeposit = await transactionsCollection
-      .find({
-        transactionType: {
-          $in: ['0', '0x0000000000000000000000000000000000000000000000000000000000000000'],
-        },
-      })
-      .count();
-    documentDbStatus.nL2TxTransfer = await transactionsCollection
-      .find({
-        transactionType: {
-          $in: ['1', '0x0000000000000000000000000000000000000000000000000000000000000001'],
-        },
-      })
-      .count();
-    documentDbStatus.nL2TxWithdraw = await transactionsCollection
-      .find({
-        transactionType: {
-          $in: ['3', '0x0000000000000000000000000000000000000000000000000000000000000002'],
-        },
-      })
-      .count();
-    documentDbStatus.pendingL2Tx = await transactionsCollection.find({ mempool: true }).count();
+    const transactionTypes = await transactionsCollection.distinct('circuitHash');
+    documentDbStatus.nL2TxType = {};
+    for (const txType of transactionTypes) {
+      documentDbStatus.nL2TxType[txType] = await transactionsCollection.countDocuments({
+        circuitHash: txType,
+      });
+    }
+    documentDbStatus.pendingL2Tx = await transactionsCollection.countDocuments({ mempool: true });
     documentDbStatus.statusCountError = 0;
 
     if (documentDbStatus.pendingL2Tx > 0 && documentDbStatus.pendingL2TxTimeStamp === 0) {
@@ -339,6 +330,9 @@ async function checkDocumentDbStatus(lastRecord) {
     } else {
       documentDbStatus.pendingL2TxTimeStamp = 0;
     }
+
+    const invalidBlocksCollection = db.collection(INVALID_BLOCKS_COLLECTION);
+    documentDbStatus.nL2ChallengedBlocks = await invalidBlocksCollection.countDocuments();
   } catch (err) {
     documentDbStatus.status = 'KO';
     documentDbStatus.statusCountError++;
@@ -363,6 +357,12 @@ async function setAlarmsDocumentDb(currentStatus, prevStatus) {
     currentStatus.documentDbStatus.pendingTxCountError = 0;
   }
 
+  if (
+    currentStatus.documentDbStatus.nL2ChallengedBlocks >
+    prevStatus.documentDbStatus.nL2ChallengedBlocks
+  ) {
+    alarm.challengedBlocks = `New block challenged. Total challenged blocks: ${currentStatus.documentDbStatus.nL2ChallengedBlocks}`;
+  }
   if (
     currentStatus.documentDbStatus.pendingL2TxTimeStamp &&
     Date.now() - currentStatus.documentDbStatus.pendingL2TxTimeStamp >=
@@ -704,12 +704,17 @@ async function pollAlarms() {
   lastRecord = (
     await dashboardCollection.find().sort({ 'fargateStatus.timestamp': -1 }).limit(1).toArray()
   )[0];
+  const clusterNames = DASHBOARD_CLUSTERS === '' ? [] : DASHBOARD_CLUSTERS.split(',');
   // Check fargate tasks
   if (
     typeof lastRecord === 'undefined' ||
     now - lastRecord.fargateStatus.timestamp >= FARGATE_CHECK_PERIOD_MIN * MILITOMINUTES
   ) {
-    status.fargateStatus = await checkFargateStatus([...appsAttr, ...ec2InstancesAttr], lastRecord);
+    status.fargateStatus = await checkFargateStatus(
+      [...appsAttr, ...ec2InstancesAttr],
+      clusterNames,
+      lastRecord,
+    );
     alarms.fargateAlarm = await setAlarmsFargate(status);
   } else {
     status.fargateStatus = lastRecord.fargateStatus;
@@ -774,8 +779,10 @@ async function pollAlarms() {
 
   // Check DynamoDb
   if (
-    typeof lastRecord === 'undefined' ||
-    now - lastRecord.dynamoDbStatus.timestamp >= Number(DYNAMODB_CHECK_PERIOD_MIN) * MILITOMINUTES
+    Number(DYNAMODB_CHECK_PERIOD_MIN) &&
+    (typeof lastRecord === 'undefined' ||
+      now - lastRecord.dynamoDbStatus.timestamp >=
+        Number(DYNAMODB_CHECK_PERIOD_MIN) * MILITOMINUTES)
   ) {
     status.dynamoDbStatus = await checkDynamoDbStatus(lastRecord);
     if (typeof lastRecord !== 'undefined') {
@@ -787,10 +794,11 @@ async function pollAlarms() {
 
   // Check Publisher Stats
   if (
-    typeof lastRecord === 'undefined' ||
-    typeof lastRecord.publisherStats === 'undefined' ||
-    now - lastRecord.publisherStats.timestamp >=
-      Number(PUBLISHER_STATS_CHECK_PERIOD_MIN) * MILITOMINUTES
+    Number(PUBLISHER_STATS_CHECK_PERIOD_MIN) &&
+    (typeof lastRecord === 'undefined' ||
+      typeof lastRecord.publisherStats === 'undefined' ||
+      now - lastRecord.publisherStats.timestamp >=
+        Number(PUBLISHER_STATS_CHECK_PERIOD_MIN) * MILITOMINUTES)
   ) {
     status.publisherStats = await checkPublisherStats(lastRecord);
     if (typeof lastRecord !== 'undefined') {
@@ -873,8 +881,13 @@ async function stop() {
  Publish metrics to AWS CloudWatch
 */
 function publishMetricsAws(status) {
-  const { blockchainStatus, documentDbStatus, dynamoDbStatus, publisherStats, optimistStats } =
-    status;
+  const {
+    blockchainStatus,
+    documentDbStatus,
+    dynamoDbStatus,
+    publisherStats,
+    optimistStats,
+  } = status;
 
   // Balances
   createCwMetric({
@@ -906,21 +919,13 @@ function publishMetricsAws(status) {
     Unit: 'None',
     Value: Number(documentDbStatus.nL2Tx),
   });
-  createCwMetric({
-    MetricName: 'NDEPOSITS_docDB',
-    Unit: 'None',
-    Value: Number(documentDbStatus.nL2TxDeposit),
-  });
-  createCwMetric({
-    MetricName: 'NTRANSFERS_docDB',
-    Unit: 'None',
-    Value: Number(documentDbStatus.nL2TxTransfer),
-  });
-  createCwMetric({
-    MetricName: 'NWITHDRAWALS_docDB',
-    Unit: 'None',
-    Value: Number(documentDbStatus.nL2TxWithdraw),
-  });
+  for (const [key, value] of Object.entries(documentDbStatus.nL2TxType)) {
+    createCwMetric({
+      MetricName: `NL2TX-${key}_docDB`,
+      Unit: 'None',
+      Value: Number(value),
+    });
+  }
   createCwMetric({
     MetricName: 'NPENDING_TRANSACTIONS_docDB',
     Unit: 'None',
@@ -932,71 +937,79 @@ function publishMetricsAws(status) {
     Value: Number(documentDbStatus.nL2Blocks),
   });
   createCwMetric({
-    MetricName: 'NBLOCKS_dynamoDB',
+    MetricName: 'NCHALLENGEDBLOCKS_docDB',
     Unit: 'None',
-    Value: Number(dynamoDbStatus.nL2Blocks),
+    Value: Number(documentDbStatus.nL2ChallengedBlocks),
   });
-  if (
-    Object.keys(publisherStats.aggregatedStats).length &&
-    Number(publisherStats.aggregatedStats.blockNumberL2) !== -1
-  ) {
+  if (Number(PUBLISHER_STATS_CHECK_PERIOD_MIN)) {
+    if (
+      Object.keys(publisherStats.aggregatedStats).length &&
+      Number(publisherStats.aggregatedStats.blockNumberL2) !== -1
+    ) {
+      createCwMetric({
+        MetricName: 'NBLOCKS_publisher',
+        Unit: 'None',
+        Value:
+          Object.keys(publisherStats.aggregatedStats).length === 0
+            ? 0
+            : Number(publisherStats.aggregatedStats.blockNumberL2) + 1,
+      });
+    }
     createCwMetric({
-      MetricName: 'NBLOCKS_publisher',
+      MetricName: 'AVG_WALLETS_publisher',
+      Unit: 'None',
+      Value: Number(publisherStats.lastBatchStats.nConnectionsPerBlock),
+    });
+    // Publisher Error metrics
+    createCwMetric({
+      MetricName: 'ERROR_429',
       Unit: 'None',
       Value:
         Object.keys(publisherStats.aggregatedStats).length === 0
           ? 0
-          : Number(publisherStats.aggregatedStats.blockNumberL2) + 1,
+          : Number(publisherStats.aggregatedStats.nErrors.error429),
+    });
+    createCwMetric({
+      MetricName: 'ERROR_410',
+      Unit: 'None',
+      Value:
+        Object.keys(publisherStats.aggregatedStats).length === 0
+          ? 0
+          : Number(publisherStats.aggregatedStats.nErrors.error410),
+    });
+    createCwMetric({
+      MetricName: 'ERROR_OTHER',
+      Unit: 'None',
+      Value:
+        Object.keys(publisherStats.aggregatedStats).length === 0
+          ? 0
+          : Number(publisherStats.aggregatedStats.nErrors.errorOther),
     });
   }
 
-  // Wallet metrics
-  createCwMetric({
-    MetricName: 'MAX_WALLETS',
-    Unit: 'None',
-    Value: Number(dynamoDbStatus.nWsItems),
-  });
-  createCwMetric({
-    MetricName: 'AVG_WALLETS_publisher',
-    Unit: 'None',
-    Value: Number(publisherStats.lastBatchStats.nConnectionsPerBlock),
-  });
-  createCwMetric({
-    MetricName: 'MIN_WALLETS',
-    Unit: 'None',
-    Value: Number(dynamoDbStatus.nWsItems),
-  });
-  createCwMetric({
-    MetricName: 'AVG_WALLETS',
-    Unit: 'None',
-    Value: Number(dynamoDbStatus.nWsItems),
-  });
-
-  // Publisher Error metrics
-  createCwMetric({
-    MetricName: 'ERROR_429',
-    Unit: 'None',
-    Value:
-      Object.keys(publisherStats.aggregatedStats).length === 0
-        ? 0
-        : Number(publisherStats.aggregatedStats.nErrors.error429),
-  });
-  createCwMetric({
-    MetricName: 'ERROR_410',
-    Unit: 'None',
-    Value:
-      Object.keys(publisherStats.aggregatedStats).length === 0
-        ? 0
-        : Number(publisherStats.aggregatedStats.nErrors.error410),
-  });
-  createCwMetric({
-    MetricName: 'ERROR_OTHER',
-    Unit: 'None',
-    Value:
-      Object.keys(publisherStats.aggregatedStats).length === 0
-        ? 0
-        : Number(publisherStats.aggregatedStats.nErrors.errorOther),
-  });
+  if (Number(DYNAMODB_CHECK_PERIOD_MIN)) {
+    createCwMetric({
+      MetricName: 'NBLOCKS_dynamoDB',
+      Unit: 'None',
+      Value: Number(dynamoDbStatus.nL2Blocks),
+    });
+    // Wallet metrics
+    createCwMetric({
+      MetricName: 'MAX_WALLETS',
+      Unit: 'None',
+      Value: Number(dynamoDbStatus.nWsItems),
+    });
+    createCwMetric({
+      MetricName: 'MIN_WALLETS',
+      Unit: 'None',
+      Value: Number(dynamoDbStatus.nWsItems),
+    });
+    createCwMetric({
+      MetricName: 'AVG_WALLETS',
+      Unit: 'None',
+      Value: Number(dynamoDbStatus.nWsItems),
+    });
+  }
 
   // Optimist error metrics
   createCwMetric({

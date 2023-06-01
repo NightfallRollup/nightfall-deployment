@@ -633,6 +633,7 @@ const dashboardAppAttr = clusterName => ({
       DASHBOARD_POLLING_INTERVAL_SECONDS: process.env.DASHBOARD_POLLING_INTERVAL_SECONDS,
       OPTIMIST_DB: process.env.OPTIMIST_DB,
       DASHBOARD_COLLECTION: process.env.DASHBOARD_COLLECTION,
+      INVALID_BLOCKS_COLLECTION: process.env.INVALID_BLOCKS_COLLECTION,
       ALARMS_COLLECTION: process.env.ALARMS_COLLECTION,
       SUBMITTED_BLOCKS_COLLECTION: process.env.SUBMITTED_BLOCKS_COLLECTION,
       TRANSACTIONS_COLLECTION: process.env.TRANSACTIONS_COLLECTION,
@@ -672,6 +673,7 @@ const dashboardAppAttr = clusterName => ({
       OPTIMIST_STATS_STATUS_COUNT_ALARM: process.env.OPTIMIST_STATS_STATUS_COUNT_ALARM,
       ENVIRONMENT: 'aws',
       S3_BUCKET_CLOUDFRONT: process.env.S3_BUCKET_CLOUDFRONT,
+      DASHBOARD_CLUSTERS: process.env.DASHBOARD_CLUSTERS,
     },
     secretVars: [
       {
@@ -1340,9 +1342,9 @@ const deployerAttr = {
      sgPorts: [22],
   },
 };
-const edgeAttr = {
+const edgeAttr = clusterName => ({
   hostname: process.env.BLOCKCHAIN_SERVICE,
-  enable: process.env.DEPLOYER_ETH_NETWORK === 'staging_edge',
+  enable: clusterName === '' && process.env.DEPLOYER_ETH_NETWORK === 'staging_edge',
   connectTo: process.env.BLOCKCHAIN_SERVICE_ALB,
   hostPort: Number(process.env.BLOCKCHAIN_PORT),
   healthcheck: {
@@ -1358,11 +1360,11 @@ const edgeAttr = {
      volumeSize: 50,
      sgPorts: [22],
   },
-};
+});
 
-const gethWsAttr = {
+const gethWsAttr = clusterName => ({
   hostname: process.env.BLOCKCHAIN_SERVICE,
-  enable: !process.env.DEPLOYER_ETH_NETWORK.includes('staging'),
+  enable: clusterName === '' && !process.env.DEPLOYER_ETH_NETWORK.includes('staging'),
   connectTo: process.env.BLOCKCHAIN_SERVICE_ALB,
   hostPort: Number(process.env.BLOCKCHAIN_PORT),
   healthcheck: {
@@ -1372,15 +1374,15 @@ const gethWsAttr = {
     process.env.DEPLOYER_ETH_NETWORK === 'goerli'
       ? process.env.EC2_GETH_IP
       : process.env.EC2_GETH_IP_MAINNET,
-};
+});
 
 
-const walletAttr = {
+const walletAttr = clusterName => ({
   hostname: process.env.WALLET_SERVICE,
-  enable: process.env.WALLET_ENABLE === 'true',
+  enable: clusterName === '' && process.env.WALLET_ENABLE === 'true',
   s3BucketArn: process.env.S3_BUCKET_CLOUDFRONT ? `arn:aws:s3:::${process.env.S3_BUCKET_CLOUDFRONT.split('//')[1]}` : '',
   connectTo: process.env.WALLET_SERVICE_ALB,
-};
+});
 
 const ec2InstancesAttr = [gethWsAttr, edgeAttr, walletAttr];
 
