@@ -1,6 +1,7 @@
 /* eslint-disable no-new */
 const { Stack, Duration } = require('aws-cdk-lib');
 const { Dashboard, GraphWidget, Metric } = require('aws-cdk-lib').aws_cloudwatch;
+const { getCircuitHashes } = require('./utils.js');
 
 function newMetric(metricParams) {
   const metric = new Metric(metricParams);
@@ -145,6 +146,7 @@ function walletMetric(envName, attr) {
 function nightfallMetric(envName, attr) {
   const metrics = [];
 
+  const circuitHashes = getCircuitHashes(`../volumes/${envName}/proving_files/circuithash.txt`);
   metrics.push(
     newMetric({
       metricName: 'NTRANSACTIONS_docDB',
@@ -155,36 +157,17 @@ function nightfallMetric(envName, attr) {
     }),
   );
 
-  metrics.push(
-    newMetric({
-      metricName: 'NDEPOSITS_docDB',
-      namespace: `Nightfall/${envName}`,
-      statistic: 'maximum',
-      label: 'N. deposits (docDB)',
-      period: Duration.minutes(attr.metricPeriodMinutes),
-    }),
-  );
-
-  metrics.push(
-    newMetric({
-      metricName: 'NTRANSFERS_docDB',
-      namespace: `Nightfall/${envName}`,
-      statistic: 'maximum',
-      label: 'N. transfers (docDB)',
-      period: Duration.minutes(attr.metricPeriodMinutes),
-    }),
-  );
-
-  metrics.push(
-    newMetric({
-      metricName: 'NWITHDRAWALS_docDB',
-      namespace: `Nightfall/${envName}`,
-      statistic: 'maximum',
-      label: 'N. withdrawals (docDB)',
-      period: Duration.minutes(attr.metricPeriodMinutes),
-    }),
-  );
-
+  for (const txType of circuitHashes){
+    metrics.push(
+      newMetric({
+        metricName: `NL2TX-${txType.hash}_docDB`,
+        namespace: `Nightfall/${envName}`,
+        statistic: 'maximum',
+        label: `N. ${txType.name}  (docDB)`,
+        period: Duration.minutes(attr.metricPeriodMinutes),
+      }),
+    );
+  }
 
   metrics.push(
     newMetric({
@@ -205,6 +188,17 @@ function nightfallMetric(envName, attr) {
       period: Duration.minutes(attr.metricPeriodMinutes),
     }),
   );
+
+  metrics.push(
+    newMetric({
+      metricName: 'NCHALLENGEDBLOCKS_docDB',
+      namespace: `Nightfall/${envName}`,
+      statistic: 'maximum',
+      label: 'N. Challenged Blocks (docDB)',
+      period: Duration.minutes(attr.metricPeriodMinutes),
+    }),
+  );
+
 
   metrics.push(
     newMetric({

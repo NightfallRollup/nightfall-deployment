@@ -70,8 +70,25 @@ function updateEcsCpus(desiredCpus) {
   return vcpus;
 }
 
+function getCircuitHashes(inputFile) {
+  const fs = require('fs');
+  let hashData;
+  try {
+    let rawdata = fs.readFileSync(inputFile);
+    hashData = JSON.parse(rawdata);
+  } catch (err) {
+    return [];
+  }
+  const circuitHashShort = [];
+  for (const circuitHash of hashData) {
+    circuitHashShort.push({hash: circuitHash.circuitHash.substr(0,12), name: circuitHash.circuitName});
+  }
+  return circuitHashShort;
+}
+
 module.exports = {
   updateEnvVars,
   findPriority,
   updateEcsCpus,
+  getCircuitHashes,
 };
