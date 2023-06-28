@@ -192,27 +192,6 @@ if [ "${_OPTIMIST_N}" ] && [ "${_OPTIMIST_N}" -gt 0 ]; then
   done
 fi
 
-# Start proposer
-if [ "${_PROPOSER_N}" ] && [ "${_PROPOSER_N}" -gt 0 ]; then
-  echo "Starting Proposer service..."
-  PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./status-service.sh proposer)
-  PROPOSER_RUNNING=$(echo ${PROPOSER_STATUS} | grep Running)
-  PROPOSER_DESIRED=$(echo ${PROPOSER_STATUS} | grep Desired)
-  PROPOSER_RUNNING_COUNT=$(echo ${PROPOSER_RUNNING: -1})
-  PROPOSER_DESIRED_COUNT=$(echo ${PROPOSER_DESIRED: -1})
-  
-  #if [[  (-z ${PROPOSER_STATUS}) || ("${PROPOSER_DESIRED_COUNT}" != "0") || ("${PROPOSER_RUNNING_COUNT}" != "0") ]]; then
-    #echo "Proposer service is running (and shouldnt). Running tasks : ${PROPOSER_RUNNING_COUNT}. Desired tasks: ${PROPOSER_DESIRED_COUNT}"
-    #echo "Run make-stop proposer first"
-    #exit 1
-  #fi
-  
-  PROPOSER_STATUS=$(AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} ./start-service.sh proposer)
-  echo "---- Proposer Status ----"
-  echo "New ${PROPOSER_STATUS}"
-fi
-
-
 # Start challenger
 if [ "${_CHALLENGER_N}" ] && [ "${_CHALLENGER_N}" -gt 0 ]; then
   echo "Starting Challenger service..."
@@ -274,20 +253,6 @@ if [ "${_DASHBOARD_ENABLE}" ] && [ "${_DASHBOARD_ENABLE}" = "true" ]; then
   echo "${DASHBOARD_STATUS}"
 fi
   
-
-# Check proposer is alive
-if [ "${_PROPOSER_N}" ] && [ "${_PROPOSER_N}" -gt 0 ]; then
-  ## ADD PROPOSER HEADER
-  while true; do
-    echo "Waiting for connection with ${_PROPOSER_HOST}..."
-    PROPOSER_RESPONSE=$(curl https://"${_PROPOSER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
-    if [ "${PROPOSER_RESPONSE}" ]; then
-      echo "Connected to ${_PROPOSER_HOST}..."
-	    break
-    fi
-    sleep 10
-  done
-fi
 
 # Check challenger is alive
 if [ "${_CHALLENGER_N}" ] && [ "${_CHALLENGER_N}" -gt 0 ]; then

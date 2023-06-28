@@ -27,7 +27,7 @@ const TEST_LENGTH = 4;
 Does the preliminary setup and starts listening on the websocket
 */
 export default async function localTest(IS_TEST_RUNNER, environment, regulatorUrl, regulatorBpUrl) {
-  logger.info('Starting local test...');
+  logger.info({msg:'Starting local test...'});
   const tokenType = 'ERC20';
   const depositValue = 100;
   const transferValue = 10;
