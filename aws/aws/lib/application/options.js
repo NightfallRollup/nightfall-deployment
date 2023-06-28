@@ -69,87 +69,6 @@ const gethAppAttr = clusterName => ({
   schedule: {},
 });
 
-const proposerAppAttr = clusterName => ({
-  nInstances : process.env.PROPOSER_N,
-  // REQUIRED. Application/Task name
-  name: 'proposer',
-  assignPublicIp: false,
-  enable: clusterName === '' && Number(process.env.PROPOSER_N) > 0,
-  // Specify Container and container image information
-  containerInfo: {
-    portInfo: [
-      {
-        containerPort: Number(process.env.PROPOSER_PORT),
-        hostPort: Number(process.env.PROPOSER_PORT),
-        // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.PROPOSER_SERVICE,
-        healthcheck: {
-          path: '/healthcheck',
-        },
-        albType: process.env.PROPOSER_SERVICE_ALB,
-      },
-    ],
-    environmentVars: {
-      OPTIMIST_HOST: process.env.OPTIMIST_HOST,
-      OPTIMIST_HTTP_HOST: process.env.OPTIMIST_HTTP_HOST,
-      OPTIMIST_WS_PORT: process.env.OPTIMIST_WS_PORT,
-      OPTIMIST_HTTP_PORT: process.env.OPTIMIST_HTTP_PORT,
-      OPTIMIST_HTTP_URL: `https://${process.env.OPTIMIST_HTTP_HOST}`,
-      OPTIMIST_WS_URL: `wss://${process.env.OPTIMIST_HOST}`,
-      PROPOSER_PORT: process.env.PROPOSER_PORT,
-      PROPOSER_HOST: process.env.PROPOSER_HOST,
-      //PROPOSER_URL: `https://${process.env.PROPOSER_HOST}`,
-      PROPOSER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
-      BLOCKCHAIN_WS_HOST: process.env.BLOCKCHAIN_WS_HOST,
-      BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
-      LOG_LEVEL: process.env.PROPOSER_LOG_LEVEL,
-      LOG_HTTP_PAYLOAD_ENABLED: process.env.PROPOSER_LOG_HTTP_PAYLOAD_ENABLED,
-      LOG_HTTP_FULL_DATA: process.env.PROPOSER_LOG_HTTP_FULL_DATA,
-      BLOCKCHAIN_URL: `wss://${process.env.BLOCKCHAIN_WS_HOST}${process.env.BLOCKCHAIN_PATH}`,
-      GAS_MULTIPLIER: process.env.GAS_MULTIPLIER,
-      GAS_PRICE: process.env.GAS_PRICE,
-      GAS: process.env.GAS_PROPOSER,
-      ENVIRONMENT: 'aws',
-      BLOCKCHAIN_PATH: process.env.BLOCKCHAIN_PATH,
-      TIMER_CHANGE_PROPOSER_SECOND: process.env.PROPOSER_TIMER_CHANGE_PROPOSER_SECOND,
-      MAX_ROTATE_TIMES: process.env.PROPOSER_MAX_ROTATE_TIMES,
-      GAS_ESTIMATE_ENDPOINT: process.env.GAS_ESTIMATE_ENDPOINT,
-      OPTIMIST_BA_WORKER_WS_HOST: process.env.OPTIMIST_BA_WORKER_WS_HOST,
-      OPTIMIST_BA_WORKER_HOST: process.env.OPTIMIST_BA_WORKER_HOST,
-    },
-    secretVars: [
-      {
-        envName: ['PROPOSER_KEY'],
-        type: ['secureString'],
-        parameterName: [
-          `${process.env.BOOT_PROPOSER_KEY_PARAM}`,
-          `${process.env.PROPOSER2_KEY_PARAM}`,
-          `${process.env.PROPOSER3_KEY_PARAM}`,
-          `${process.env.PROPOSER4_KEY_PARAM}`,
-          `${process.env.PROPOSER5_KEY_PARAM}`,
-          `${process.env.PROPOSER6_KEY_PARAM}`,
-          `${process.env.PROPOSER7_KEY_PARAM}`,
-          `${process.env.PROPOSER8_KEY_PARAM}`,
-          `${process.env.PROPOSER9_KEY_PARAM}`,
-          `${process.env.PROPOSER10_KEY_PARAM}`
-        ],
-      },
-    ],
-    command: [],
-    repository: process.env.ECR_REPO,
-    imageName: 'nightfall-proposer',
-    imageTag: process.env.RELEASE,
-  },
-  cpu: 1,
-  // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
-  schedule: {
-    downtime: {
-      at: process.env.PROPOSER_DOWNTIME_AT,
-      length: process.env.PROPOSER_DOWNTIME_LENGTH_MINUTES,
-    },
-  },
-});
-
 const challengerAppAttr = clusterName => ({
   nInstances : process.env.CHALLENGER_N,
   // REQUIRED. Application/Task name
@@ -293,6 +212,22 @@ const optimistAppAttr = clusterName => ({
         envName: ['MONGO_INITDB_ROOT_USERNAME'],
         type: ['string'],
         parameterName: ['mongo_user'],
+      },
+      {
+        envName: ['PROPOSER_KEY'],
+        type: ['secureString'],
+        parameterName: [
+          `${process.env.BOOT_PROPOSER_KEY_PARAM}`,
+          `${process.env.PROPOSER2_KEY_PARAM}`,
+          `${process.env.PROPOSER3_KEY_PARAM}`,
+          `${process.env.PROPOSER4_KEY_PARAM}`,
+          `${process.env.PROPOSER5_KEY_PARAM}`,
+          `${process.env.PROPOSER6_KEY_PARAM}`,
+          `${process.env.PROPOSER7_KEY_PARAM}`,
+          `${process.env.PROPOSER8_KEY_PARAM}`,
+          `${process.env.PROPOSER9_KEY_PARAM}`,
+          `${process.env.PROPOSER10_KEY_PARAM}`
+        ],
       },
     ],
     command: [],
@@ -481,16 +416,6 @@ const optBaWorkerAppAttr = clusterName => ({
         },
         albType: process.env.OPTIMIST_BA_WORKER_SERVICE_ALB,
       },
-      {
-        containerPort: Number(process.env.OPTIMIST_BA_WORKER_WS_PORT),
-        hostPort: Number(process.env.OPTIMIST_BA_WORKER_WS_PORT),
-        // REQUIRED. Route 53 will add hostname.zoneName DNS
-        hostname: process.env.OPTIMIST_BA_WORKER_WS_SERVICE,
-        healthcheck: {
-          healthyHttpCodes: '200-499',
-        },
-        albType: process.env.OPTIMIST_BA_WORKER_WS_SERVICE_ALB,
-      },
     ],
     environmentVars: {
       AUTOSTART_RETRIES: process.env.OPTIMIST_AUTOSTART_RETRIES,
@@ -663,7 +588,6 @@ const dashboardAppAttr = clusterName => ({
       PUBLISHER_STATS_STATUS_COUNT_ALARM: process.env.PUBLISHER_STATS_STATUS_COUNT_ALARM,
       PROPOSER_MAX_BLOCK_PERIOD_MILIS: process.env.PROPOSER_MAX_BLOCK_PERIOD_MILIS,
       BLOCKCHAIN_SERVICE: process.env.BLOCKCHAIN_SERVICE,
-      PROPOSER_SERVICE: process.env.PROPOSER_SERVICE,
       CHALLENGER_SERVICE: process.env.CHALLENGER_SERVICE,
       OPTIMIST_WS_SERVICE: process.env.OPTIMIST_WS_SERVICE,
       OPTIMIST_HTTP_SERVICE: process.env.OPTIMIST_HTTP_SERVICE,
@@ -1311,7 +1235,6 @@ const appsAttr = [
   optTxWorkerAppAttr,
   optBpWorkerAppAttr,
   optBaWorkerAppAttr,
-  proposerAppAttr,
   publisherAppAttr,
   dashboardAppAttr,
   challengerAppAttr,

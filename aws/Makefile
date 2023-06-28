@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=41f78220ab66cdd103817671fbdccb2ce5c3cc7e
+NIGHTFALL_BRANCH=3cb214df0b8f49bf89191ae8ef44936bc49d3017
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -275,6 +275,9 @@ fund-accounts:
 test-ping_pong:
 	mkdir -p nightfall_3/test/ping-pong-single
 	cp test/ping-pong/* nightfall_3/test/ping-pong-single
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+	  cp tmp/cli/nf3.mjs nightfall_3/cli/lib; \
+	fi
 	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=PING_PONG ./launch-test.sh
 
 test-load:
@@ -334,7 +337,7 @@ deploy-wallet:
 deploy-wallet-local:
 	cd scripts && RELEASE=${RELEASE} ./deploy-wallet-local.sh
 
-# Build all images (client, optimist, proposer, challenger, publisher, adversary)
+# Build all images (client, optimist, challenger, publisher, adversary)
 build-all:
 	$(eval NIGHTFALL_LEGACY=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export NIGHTFALL_LEGACY=//p'))
 	@make update-repo
@@ -349,7 +352,6 @@ build-all:
 	@make build-client
 	@make build-lazy_client
 	@make build-optimist
-	@make build-proposer
 	@make build-worker
 	@make build-deployer
 	@make build-publisher
@@ -358,7 +360,7 @@ build-all:
 	@make build-adversary
 	@make build-admin
 
-# Push images to docker repo (client, optimist, proposer, challenger, publisher, adversary)
+# Push images to docker repo (client, optimist, challenger, publisher, adversary)
 push-all:
 	@make login-ecr
 	$(eval GIT_COMMIT=$(shell git rev-parse HEAD))
@@ -377,7 +379,6 @@ push-all:
 	@make push-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-proposer GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-worker GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-deployer GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-challenger GIT_COMMIT=${GIT_COMMIT}
@@ -440,11 +441,6 @@ build-lazy_client:
 	@cd nightfall_3 && npm run build-adversary
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
-
-build-proposer:
-	cp docker/proposer-docker-entrypoint.sh nightfall_3/apps/proposer/docker-entrypoint.sh
-	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
-	@make build-image NIGHTFALL_IMAGE=nightfall-proposer GIT_COMMIT=${GIT_COMMIT}
 
 build-worker:
 	make login-ecr
@@ -559,11 +555,6 @@ push-deployer:
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-deployer GIT_COMMIT=${GIT_COMMIT}
 
-push-proposer:
-	@make login-ecr
-	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
-	@make push-image NIGHTFALL_IMAGE=nightfall-proposer GIT_COMMIT=${GIT_COMMIT}
-
 push-challenger:
 	@make login-ecr
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
@@ -590,7 +581,6 @@ stop-infra:
 	  make stop-opt_txw; \
 	  make stop-opt_bpw; \
 	  make stop-opt_baw; \
-	  make stop-proposer; \
 	  make stop-publisher; \
 	  make stop-dashboard; \
 	  make stop-challenger; \
@@ -620,10 +610,6 @@ stop-opt_bpw:
 stop-opt_baw:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh opt_baw${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./stop-service.sh optbaw${INSTANCE_INDEX}
-
-stop-proposer:
-	cd scripts && RELEASE=${RELEASE} ./restart-task.sh proposer${INSTANCE_INDEX}
-	cd scripts && RELEASE=${RELEASE} ./stop-service.sh proposer${INSTANCE_INDEX}
 
 stop-publisher:
 	cd scripts && RELEASE=${RELEASE} ./restart-task.sh publisher
@@ -679,7 +665,6 @@ start-infra_all:
 	make start-opt_txw
 	make start-opt_bpw
 	make start-opt_baw
-	make start-proposer
 	make start-publisher
 	make start-dashboard
 	make start-challenger
@@ -719,9 +704,6 @@ start-opt_bpw:
 
 start-opt_baw:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh optbaw${INSTANCE_INDEX}
-
-start-proposer:
-	cd scripts && RELEASE=${RELEASE} ./start-service.sh proposer${INSTANCE_INDEX}
 
 start-publisher:
 	cd scripts && RELEASE=${RELEASE} ./start-service.sh publisher
@@ -786,10 +768,6 @@ restart-opt_bpw:
 restart-opt_baw:
 	make stop-opt_baw
 	make start-opt_baw
-
-restart-proposer:
-	make stop-proposer
-	make start-proposer
 
 restart-challenger:
 	make stop-challenger
@@ -860,10 +838,6 @@ status-opt_baw:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh optbaw${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./status-task.sh opt_baw${INSTANCE_INDEX}
 
-status-proposer:
-	cd scripts && RELEASE=${RELEASE} ./status-service.sh proposer${INSTANCE_INDEX}
-	cd scripts && RELEASE=${RELEASE} ./status-task.sh proposer${INSTANCE_INDEX}
-
 status-challenger:
 	cd scripts && RELEASE=${RELEASE} ./status-service.sh challenger${INSTANCE_INDEX}
 	cd scripts && RELEASE=${RELEASE} ./status-task.sh challenger${INSTANCE_INDEX}
@@ -928,9 +902,6 @@ exec-opt_bpw:
 
 exec-opt_baw:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh opt_baw${INSTANCE_INDEX}Container
-
-exec-proposer:
-	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh proposer${INSTANCE_INDEX}Container
 
 exec-challenger:
 	cd scripts && RELEASE=${RELEASE} COMMAND=/bin/bash ./execute-command.sh challenger${INSTANCE_INDEX}Container
@@ -1092,7 +1063,6 @@ copy-files:
 	cp docker/worker.Dockerfile nightfall_3/docker/worker.Dockerfile
 	cp docker/challenger.Dockerfile nightfall_3/docker
 	cp docker/admin-docker-entrypoint.sh nightfall_3/nightfall-administrator/docker-entrypoint.sh
-	cp docker/proposer-docker-entrypoint.sh nightfall_3/apps/proposer/docker-entrypoint.sh
 	cp tmp/workers/debug.mjs nightfall_3/nightfall-optimist/src/routes/
 	cp tmp/workers/transaction-submitted-app.mjs nightfall_3/nightfall-optimist/src/workers
 	cp tmp/workers/transaction-submitted.mjs nightfall_3/nightfall-optimist/src/event-handlers/

@@ -19,9 +19,6 @@ echo -e "_OPTIMIST_TX_WORKER_HOST=\${${_CLUSTER}OPTIMIST_TX_WORKER_HOST}" >> ../
 echo -e "_OPTIMIST_BP_WORKER_HOST=\${${_CLUSTER}OPTIMIST_BP_WORKER_HOST}" >> ../env/cluster.env
 echo -e "_OPTIMIST_BA_WORKER_HOST=\${${_CLUSTER}OPTIMIST_BA_WORKER_HOST}" >> ../env/cluster.env
 
-echo -e "_PROPOSER_N=\${${_CLUSTER}PROPOSER_N}" >> ../env/cluster.env
-echo -e "_PROPOSER_HOST=\${${_CLUSTER}PROPOSER_HOST}" >> ../env/cluster.env
-
 echo -e "_CHALLENGER_N=\${${_CLUSTER}CHALLENGER_N}" >> ../env/cluster.env
 echo -e "_CHALLENGER_HOST=\${${_CLUSTER}CHALLENGER_HOST}" >> ../env/cluster.env
 

@@ -393,8 +393,18 @@ To verify funds in each account:
 ```
 RELEASE=xxxx make fund-accounts
 ```
+13. Register proposer
+To register a proposer:
+```
+RELEASE=xxx make register-proposer
+```
 
-13. Launch some transactions
+To deregister a proposer:
+```
+RELEASE=xxx make deregister-proposer
+```
+
+14. Launch some transactions
 To launch initial transactions and propose the initial blocks
 ```
 RELEASE=xxx make test-ping_pong
@@ -403,7 +413,7 @@ RELEASE=xxx make test-ping_pong
 Ping pong test can be launched at any time to test that the deployment is working correctly.
 While test is running, you can check client tmux session to see logs running.
 
-14. Add new clients
+15. Add new clients
 To add new clients in different clusters:
 
 ```
@@ -434,7 +444,7 @@ It is possible to launch a ping-pong test, with the first user from main infrast
 RELEASE=xxx CLUSTER=yyy make test-ping_pong
 ```
 
-15. Destroying environment
+16. Destroying environment
 Once you're done with the environment and are ready to tear it up, the steps are:
 
 - Destroy resources created
