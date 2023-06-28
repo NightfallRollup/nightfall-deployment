@@ -63,34 +63,6 @@ function optimistErrorMetric(envName, attr) {
       period: Duration.minutes(attr.metricPeriodMinutes),
     }),
   );
-  metrics.push(
-    newMetric({
-      metricName: 'PROPOSER_WS_CLOSED',
-      namespace: `Nightfall/${envName}`,
-      statistic: 'maximum',
-      label: 'Proposer Ws Closed',
-      period: Duration.minutes(attr.metricPeriodMinutes),
-    }),
-  );
-  metrics.push(
-    newMetric({
-      metricName: 'PROPOSER_WS_FAILED',
-      namespace: `Nightfall/${envName}`,
-      statistic: 'maximum',
-      label: 'Proposer Ws Failed',
-      period: Duration.minutes(attr.metricPeriodMinutes),
-    }),
-  );
-  metrics.push(
-    newMetric({
-      metricName: 'PROPOSER_BLOCK_NOT_SENT',
-      namespace: `Nightfall/${envName}`,
-      statistic: 'maximum',
-      label: 'Proposer Block Not Sent',
-      period: Duration.minutes(attr.metricPeriodMinutes),
-    }),
-  );
-
 
   return metrics;
 }

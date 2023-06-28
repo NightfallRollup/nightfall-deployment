@@ -789,7 +789,7 @@ async function pollAlarms() {
       alarms.dynamoDb = await setAlarmsDynamoDb(status, lastRecord);
     }
   } else {
-    status.dynamoDbStatus = lastRecord.dynamoDbStatus;
+    status.dynamoDbStatus = lastRecord?.dynamoDbStatus;
   }
 
   // Check Publisher Stats
@@ -805,7 +805,7 @@ async function pollAlarms() {
       alarms.publisherStats = await setAlarmsPublisherStats(status, lastRecord);
     }
   } else {
-    status.publisherStats = lastRecord.publisherStats;
+    status.publisherStats = lastRecord?.publisherStats;
   }
 
   // Check Optimist Stats
@@ -1021,21 +1021,6 @@ function publishMetricsAws(status) {
     MetricName: 'NBLOCKS_INVALID',
     Unit: 'None',
     Value: Number(optimistStats.debugCounters.nBlockInvalid),
-  });
-  createCwMetric({
-    MetricName: 'PROPOSER_WS_CLOSED',
-    Unit: 'None',
-    Value: Number(optimistStats.debugCounters.proposerWsClosed),
-  });
-  createCwMetric({
-    MetricName: 'PROPOSER_WS_FAILED',
-    Unit: 'None',
-    Value: Number(optimistStats.debugCounters.proposerWsFailed),
-  });
-  createCwMetric({
-    MetricName: 'PROPOSER_BLOCK_NOT_SENT',
-    Unit: 'None',
-    Value: Number(optimistStats.debugCounters.proposerBlockNotSent),
   });
 }
 

@@ -181,6 +181,7 @@ const optimistAppAttr = clusterName => ({
       BLOCKCHAIN_PORT: process.env.BLOCKCHAIN_PORT,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
       MAX_BLOCK_SIZE: process.env.MAX_BLOCK_SIZE,
+      OPTIMIST_HTTP_HOST: process.env.OPTIMIST_HTTP_HOST,
       HASH_TYPE: process.env.NIGHTFALL_HASH_TYPE,
       LOG_LEVEL: process.env.OPTIMIST_LOG_LEVEL,
       LOG_HTTP_PAYLOAD_ENABLED: process.env.OPTIMIST_LOG_HTTP_PAYLOAD_ENABLED,
