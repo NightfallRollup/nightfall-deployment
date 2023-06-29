@@ -31,7 +31,6 @@ repoList=("geth" \
    "nightfall-opt_txw" \
    "nightfall-opt_bpw" \
    "nightfall-opt_baw" \
-   "nightfall-proposer" \
    "nightfall-publisher" \
    "nightfall-worker" \
    "nightfall-lazy_client")
