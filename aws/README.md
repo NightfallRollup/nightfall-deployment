@@ -490,7 +490,7 @@ Deployment is done in AWS ECS, a container orchestrator from AWS. You can exec i
 ```
 RELEASE=xxx make exec-<container-name>
 ```
-where container name can be geth, proposer, optimist, challenger, publisher, dashboard,...
+where container name can be geth, optimist, challenger, publisher, dashboard,...
 
 # Project structure
 Nightfall deployment project structure looks as follows:
