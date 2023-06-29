@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=3cb214df0b8f49bf89191ae8ef44936bc49d3017
+NIGHTFALL_BRANCH=c2913909754afb5442db3756fe90bd3968551cd8
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -275,9 +275,6 @@ fund-accounts:
 test-ping_pong:
 	mkdir -p nightfall_3/test/ping-pong-single
 	cp test/ping-pong/* nightfall_3/test/ping-pong-single
-	if [ "${OVERWRITE_CODE}" = "y" ]; then\
-	  cp tmp/cli/nf3.mjs nightfall_3/cli/lib; \
-	fi
 	cd scripts && RELEASE=${RELEASE} TEST_LENGTH=${TEST_LENGTH} TEST=PING_PONG ./launch-test.sh
 
 test-load:
