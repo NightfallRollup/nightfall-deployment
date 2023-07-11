@@ -36,5 +36,9 @@ done
 mkdir -p /tmp
 rm -f /tmp/priorities.nightfall
 TASK_PRIORITIES=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/priorities" 2> /dev/null | jq '.Parameter.Value' | tr -d '"') 
-cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} CLUSTERS=${CLUSTERS} cdk diff
+if [ "${DEPLOYER_EC2}" == "true" ] || [ "${PIPELINE_STACK}" == "true" ]; then
+  cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} DEPLOYER_EC2=${DEPLOYER_EC2} PIPELINE_STACK=${PIPELINE_STACK} CLUSTERS=${CLUSTERS} cdk diff
+else
+  cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} CLUSTERS=${CLUSTERS} cdk diff
+fi
 

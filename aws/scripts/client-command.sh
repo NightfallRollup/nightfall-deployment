@@ -29,8 +29,12 @@ fi
 source ${SECRETS_ENV}
 set +o allexport
 
-CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
-CLIENT_BP_WORKER=$(docker inspect client-bpw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+if [ "$(docker ps | grep client)" ]; then
+  CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+fi
+if [ "$(docker ps | grep client-bpw)" ]; then
+  CLIENT_BP_WORKER=$(docker inspect client-bpw | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+fi
 if [ -z "${CLIENT}" ]; then
   CLIENT_API_URL=https://${CLIENT_HOST}
   CLIENT_BP_WORKER_URL=https://${CLIENT_BP_WORKER_HOST}

@@ -29,7 +29,7 @@ source ../env/aws.env
 echo -e "\nCreating Env File ${ENV_FILE}..."
 vpcId=$(aws ec2 describe-vpcs \
   --region $REGION \
-  | jq ".Vpcs[] | select(.CidrBlock==\"10.48.0.0/16\") | .VpcId" \
+  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | select(.Tags[].Value==\"${ENV_NAME}-NightfallVPC\" or .Tags[].Value==\"${ENV_NAME^}-NightfallVPC\") | .VpcId" \
   | tr -d '"')
 
 if [ -z "${vpcId}" ]; then

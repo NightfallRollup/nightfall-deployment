@@ -42,5 +42,5 @@ TASK_PRIORITIES=$(aws ssm get-parameter --region ${REGION} --name "/${ENVIRONMEN
 cd ../aws && SAVE_TASK_PRIORITY=1 TASK_PRIORITIES=${TASK_PRIORITIES} CLUSTERS=${CLUSTERS} cdk deploy ${STACK}  --require-approval never
 TASK_PRIORITIES=$(cat /tmp/nightfall.priority)
 aws ssm put-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/priorities" --type "String" --value "${TASK_PRIORITIES}" --overwrite > /dev/null
-rm -rf /tmp/nightfall.ptiority
+rm -rf /tmp/nightfall.priority
 

@@ -114,7 +114,7 @@ if [ -z "${UPGRADE}" ]; then
     sudo mkdir -p ${EFS_MOUNT_POINT}/store
     sudo mkdir -p ${STORE}
     # If NET_ID is small (testnet), we prompt if contracts and proving files are to be kept. Else (ganache), we delete
-    if [[ ( -z "${NET_ID}") || ("${NET_ID}" -lt "6") ]]; then
+    if [[ (( -z "${NET_ID}") || ("${NET_ID}" -lt "6")) && ( -z "${BATCH_DEPLOY}") ]]; then
       while true; do
         read -p "Proceed deleting contents of ${EFS_MOUNT_POINT}/build/ Net ID ${NET_ID} ? [Y/N/B] " PROMPT_BUILD
         case ${PROMPT_BUILD} in

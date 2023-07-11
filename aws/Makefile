@@ -104,6 +104,25 @@ update-infra:
 	@make cdk-context
 	cd scripts && RELEASE=${RELEASE} ./deploy-cdk.sh
 
+create-deployment:
+	make build-all
+	make push-all
+	make deploy-infra
+	make deploy-contracts
+	make fund-accounts
+
+contracts-and-fund:
+	make deploy-contracts
+	make fund-accounts
+
+deploy-cluster:
+	make add-cluster
+	make deploy-infra
+
+destroy-cluster:
+	make delete-cluster
+	make deploy-infra
+	make destroy-infra
 
 # Deploy Infrastructure (Cloudformation stacks)
 deploy-infra:
@@ -115,13 +134,15 @@ deploy-infra:
 	@make start-db
 	@make stop-infra
 	cd scripts && RELEASE=${RELEASE} ./deploy-cdk.sh
-	@make stop-infra
-	@make start-infra
+	@if [ "${START_INFRA}" ]; then\
+	  make stop-infra; \
+	  make start-infra; \
+    fi
 
 # Uninstall Infrastructure (Cloudformation stacks)
 destroy-infra:
 	@make cdk-context
-	cd scripts && RELEASE=${RELEASE} ./destroy-cdk.sh
+	cd scripts && RELEASE=${RELEASE} FORCE_DESTROY=${FORCE_DESTROY} ./destroy-cdk.sh
 	@if [ "${STOP_DB}" ]; then\
 	   make stop-db; \
     fi
@@ -144,6 +165,15 @@ deploy-deployer:
 destroy-deployer:
 	@make cdk-context
 	cd scripts && RELEASE=${RELEASE} DEPLOYER_EC2=true ./destroy-cdk.sh
+
+# Deploy code pipeline
+deploy-pipeline:
+	@make cdk-context
+	cd scripts && RELEASE=${RELEASE} PIPELINE_STACK=true ./deploy-cdk.sh
+
+destroy-pipeline:
+	@make cdk-context
+	cd scripts && RELEASE=${RELEASE} PIPELINE_STACK=true ./destroy-cdk.sh
 
 # Delete MongoDb
 delete-db:
@@ -478,7 +508,7 @@ build-dashboard:
 
 build-geth:
 	cp nightfall_3/config/default.js services/geth/config
-	cd services/geth && docker build -f geth.Dockerfile . -t ${ECR_REPO}/geth:${RELEASE}
+	cd services/geth && docker build -f geth.Dockerfile . -t public.ecr.aws/m0t3e1j9/geth:latest
 
 build-circom:
 	cd nightfall_3 && docker build -f docker/circom.Dockerfile . -t nightfall-circom:latest
@@ -568,13 +598,13 @@ push-dashboard:
 	@make push-image NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
 
 push-geth:
-	@make login-ecr
-	@docker push ${ECR_REPO}/geth:${RELEASE}
+	@make login-public-ecr
+	@docker push public.ecr.aws/m0t3e1j9/geth:latest
 
 # Stop services
 stop-infra:
 	@if [ -z "${CLUSTER}" ]; then\
-	  make stop-optimist; \
+	  make stop-optimis; \
 	  make stop-opt_txw; \
 	  make stop-opt_bpw; \
 	  make stop-opt_baw; \
@@ -967,6 +997,10 @@ push-image:
 login-ecr:
 	@aws ecr get-login-password --region ${REGION} | docker login --username AWS --password-stdin ${ECR_REPO}
 
+# Login to Public AWS ECR
+login-public-ecr:
+	@aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/m0t3e1j9
+
 # Download Nightfall repo
 update-repo:
 	@test -e "nightfall_3" || git clone git@github.com:${NIGHTFALL_REPO}.git nightfall_3
@@ -1029,6 +1063,12 @@ kill-deployer:
 deploy-diff:
 	make cdk-context
 	cd scripts && RELEASE=${RELEASE} ./check-deployment-diff.sh
+deployer-diff:
+	make cdk-context
+	cd scripts && RELEASE=${RELEASE} DEPLOYER_EC2=true ./check-deployment-diff.sh
+pipeline-diff:
+	make cdk-context
+	cd scripts && RELEASE=${RELEASE} PIPELINE_STACK=true ./check-deployment-diff.sh
 
 # Copy AWS context files when making infra
 cdk-context:

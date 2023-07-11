@@ -125,7 +125,7 @@ Some additional considerations:
 - if WALLET_ENABLE is set to true, a cloudfront distribution will be created where browser wallet can be deployed
 
 ## Creating and Deleting Repositories
-New environment may lack ECR repositories if they are created in new regions. To create the necessary repositories, launch:
+`create-env.sh` creates the necessary ECR repositories. However, you can create them manually with
 ```
 cd scripts
 REGION=<xxx> ./create-repos.sh
@@ -228,6 +228,8 @@ cd ../..
 RELEASE=xxx make build-geth push-geth
 ```
 
+By default this image is pushed to public repo `public.ecr.aws/m0t3e1j9/geth:latest`
+
 ## Spining EC2 instance to act as deployer
 Optionally, one can create an EC2 instance to deploy Nightfall instead of doing it from local computer.
 To spin the EC2 instance, follow this process:
@@ -274,7 +276,7 @@ Different `RELEASE` are deploying in a separate deployment environment with the 
 Set RELEASE to one of this vale. To select the enviroment to deploy, append `RELEASE=<release value> make xxxx` to 
 any target in the Makefile. In these document we assume that `RELEASE=<env name>`  is always appended to any selected `RELEASE=xxx make target` even though it is not shown explicitely.
 
-5. Build conntainer images to AWS ECR repository
+5. Build container images to AWS ECR repository
 ```
 RELEASE=xxx make build-all
 ```

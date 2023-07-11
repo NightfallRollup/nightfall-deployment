@@ -9,7 +9,6 @@
 #   REGION is the AWS region where environment is to be created
 
 # set -e  
-
 if [ -z "${ENV_NAME}" ]; then
   echo "Invalid Env name. Exiting..."
   exit 1
@@ -28,7 +27,7 @@ echo -n "Deleting VPC environment..."
 
 vpcId=$(aws ec2 describe-vpcs \
   --region $REGION \
-  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | .VpcId" \
+  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | select(.Tags[].Value==\"${ENV_NAME}-NightfallVPC\" or .Tags[].Value==\"${ENV_NAME^}-NightfallVPC\") | .VpcId" \
   | tr -d '"')
 
 availableEipallocIds=$(aws ec2 describe-addresses \
@@ -114,13 +113,13 @@ else
     | jq '.RouteTables[].RouteTableId' \
     | tr -d '"')
   for routeTableId in $availableRouteTableIds; do
-    echo "Deleting Routing Table ${routeTableId}..."
     deleteTable=$(aws ec2 describe-route-tables \
       --region ${REGION} \
       --route-table-id ${routeTableId} \
       | jq '.RouteTables[].Tags[].Value' \
       | tr -d '"')
     if [ "${deleteTable}" ]; then
+      echo "Deleting Routing Table ${routeTableId}..."
       aws ec2 delete-route-table \
         --region ${REGION} \
         --route-table-id ${routeTableId} > /dev/null

@@ -60,9 +60,9 @@ const gethAppAttr = clusterName => ({
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     command: [],
-    repository: process.env.ECR_REPO,
+    repository: 'public.ecr.aws/m0t3e1j9',
     imageName: 'geth',
-    imageTag: process.env.RELEASE,
+    imageTag: 'latest'
   },
   cpu: process.env.BLOCKCHAIN_CPU_COUNT ? Number(process.env.BLOCKCHAIN_CPU_COUNT ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
