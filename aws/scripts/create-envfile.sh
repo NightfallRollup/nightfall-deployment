@@ -43,10 +43,10 @@ apiGwId=$(aws apigatewayv2 get-apis \
  | jq ".Items[] | select(.Name==\"${apiGwName}\") | .ApiId" \
  | tr -d '\"')
 
-if [ -z "${apiGwId}" ]; then
-  echo "Couldn't read API Gw Id. Exiting..."
-  exit 1
-fi
+#if [ -z "${apiGwId}" ]; then
+  #echo "Couldn't read API Gw Id. Exiting..."
+  #exit 1
+#fi
 
 # Create env file
 cp ../env/template.env ${ENV_FILE}
@@ -69,8 +69,8 @@ perl -i -pe "s#export ENVIRONMENT_NAME=.*#export ENVIRONMENT_NAME=${ENV_NAME}#g"
 perl -i -pe "s#export DOMAIN_NAME=.*#export DOMAIN_NAME=${ENV_NAME,,}.${domainName}#g" ${ENV_FILE}
 perl -i -pe "s#export REGION=.*#export REGION=${REGION}#g" ${ENV_FILE}
 perl -i -pe "s#export VPC_ID=.*#export VPC_ID=${vpcId}#g" ${ENV_FILE}
-perl -i -pe "s#export API_WS_SEND_ENDPOINT=.*#export API_WS_SEND_ENDPOINT=wss://${apiGwId}.execute-api.${REGION}.amazonaws.com/${ENV_NAME,,}#g" ${ENV_FILE}
-perl -i -pe "s#export API_HTTPS_SEND_ENDPOINT=.*#export API_HTTPS_SEND_ENDPOINT=https://${apiGwId}.execute-api.${REGION}.amazonaws.com/${ENV_NAME,,}/#g" ${ENV_FILE}
+#perl -i -pe "s#export API_WS_SEND_ENDPOINT=.*#export API_WS_SEND_ENDPOINT=wss://${apiGwId}.execute-api.${REGION}.amazonaws.com/${ENV_NAME,,}#g" ${ENV_FILE}
+#perl -i -pe "s#export API_HTTPS_SEND_ENDPOINT=.*#export API_HTTPS_SEND_ENDPOINT=https://${apiGwId}.execute-api.${REGION}.amazonaws.com/${ENV_NAME,,}/#g" ${ENV_FILE}
 perl -i -pe "s#export S3_BUCKET_WALLET=.*#export S3_BUCKET_WALLET=s3://${S3_WALLET_BUCKET}-${ENV_NAME,,}#g" ${ENV_FILE}
 perl -i -pe "s#export S3_BUCKET_DEPLOYER=.*#export S3_BUCKET_DEPLOYER=s3://${S3_DEPLOYER_BUCKET}-${ENV_NAME,,}#g" ${ENV_FILE}
 perl -i -pe "s#export S3_BUCKET_CLOUDFRONT=.*#export S3_BUCKET_CLOUDFRONT=s3://${S3_CLOUDFRONT_BUCKET}-${ENV_NAME,,}#g" ${ENV_FILE}

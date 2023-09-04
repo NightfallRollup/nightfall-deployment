@@ -228,7 +228,7 @@ cd ../..
 RELEASE=xxx make build-geth push-geth
 ```
 
-By default this image is pushed to public repo `public.ecr.aws/m0t3e1j9/geth:latest`
+By default this image is pushed to public repo `public.ecr.aws/s8i7t1r9/geth:latest`
 
 ## Spining EC2 instance to act as deployer
 Optionally, one can create an EC2 instance to deploy Nightfall instead of doing it from local computer.

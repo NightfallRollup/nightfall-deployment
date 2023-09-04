@@ -60,7 +60,7 @@ const gethAppAttr = clusterName => ({
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
     },
     command: [],
-    repository: 'public.ecr.aws/m0t3e1j9',
+    repository: 'public.ecr.aws/s8i7t1r9',
     imageName: 'geth',
     imageTag: 'latest'
   },

@@ -377,15 +377,15 @@ build-all:
 	  make build-opt_baw; \
 	fi
 	@make build-client
-	@make build-lazy_client
+	#@make build-lazy_client
 	@make build-optimist
 	@make build-worker
 	@make build-deployer
-	@make build-publisher
+	#@make build-publisher
 	@make build-challenger
 	@make build-dashboard
-	@make build-adversary
-	@make build-admin
+	#@make build-adversary
+	#@make build-admin
 
 # Push images to docker repo (client, optimist, challenger, publisher, adversary)
 push-all:
@@ -400,17 +400,17 @@ push-all:
 	  make push-image NIGHTFALL_IMAGE=nightfall-opt_bpw GIT_COMMIT=${GIT_COMMIT} ; \
 	  make push-image NIGHTFALL_IMAGE=nightfall-opt_baw GIT_COMMIT=${GIT_COMMIT} ; \
 	fi
-	@make push-image NIGHTFALL_IMAGE=nightfall-publisher GIT_COMMIT=${GIT_COMMIT}
+	#@make push-image NIGHTFALL_IMAGE=nightfall-publisher GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
+	#@make push-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-worker GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-deployer GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-challenger GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-adversary GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-admin GIT_COMMIT=${GIT_COMMIT}
+	#@make push-image NIGHTFALL_IMAGE=nightfall-adversary GIT_COMMIT=${GIT_COMMIT}
+	#@make push-image NIGHTFALL_IMAGE=nightfall-admin GIT_COMMIT=${GIT_COMMIT}
 
 # Build individual images
 build-client:
@@ -508,7 +508,7 @@ build-dashboard:
 
 build-geth:
 	cp nightfall_3/config/default.js services/geth/config
-	cd services/geth && docker build -f geth.Dockerfile . -t public.ecr.aws/m0t3e1j9/geth:latest
+	cd services/geth && docker build -f geth.Dockerfile . -t public.ecr.aws/s8i7t1r9/geth:latest
 
 build-circom:
 	cd nightfall_3 && docker build -f docker/circom.Dockerfile . -t nightfall-circom:latest
@@ -599,7 +599,7 @@ push-dashboard:
 
 push-geth:
 	@make login-public-ecr
-	@docker push public.ecr.aws/m0t3e1j9/geth:latest
+	@docker push public.ecr.aws/s8i7t1r9/geth:latest
 
 # Stop services
 stop-infra:
@@ -999,7 +999,7 @@ login-ecr:
 
 # Login to Public AWS ECR
 login-public-ecr:
-	@aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/m0t3e1j9
+	@aws ecr-public get-login-password --region us-east-1 | docker login --username AWS --password-stdin public.ecr.aws/s8i7t1r9
 
 # Download Nightfall repo
 update-repo:

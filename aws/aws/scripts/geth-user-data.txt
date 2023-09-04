@@ -62,4 +62,4 @@ fi
 tmux kill-session -t geth
 tmux new -d -s geth
 
-tmux send-keys "docker run -it -p 8546:8546 public.ecr.aws/m0t3e1j9/geth" Enter
+tmux send-keys "docker run -it -p 8546:8546 public.ecr.aws/s8i7t1r9/geth" Enter
