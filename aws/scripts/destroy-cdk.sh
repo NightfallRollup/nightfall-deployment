@@ -48,7 +48,7 @@ if [ "${DEPLOYER_EC2}" == "true" ]; then
 	  gh ssh-key delete ${GIT_KEY_ID} -y
   fi
 fi
-cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} CLUSTERS=${CLUSTERS} cdk destroy ${STACKS}
+cd ../aws && TASK_PRIORITIES=${TASK_PRIORITIES} CLUSTERS=${CLUSTERS} cdk destroy ${STACKS} ${FORCE_DESTROY}
 # Delete priorities only when not destroying deployer
 if [ "${DEPLOYER_EC2}" != "true" ]; then
   aws ssm delete-parameter --region ${REGION} --name "/${ENVIRONMENT_NAME}/priorities" > /dev/null

@@ -1,0 +1,338 @@
+openapi: 3.0.0
+servers:
+  # Added by API Auto Mocking Plugin
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/DRUIZ0992_1/NightfallDeployer/1.0.0
+info:
+  description: API used to deploy and configure Nightfall environments
+  version: "1.0.0"
+  title: Nightfall Deployer API
+  contact:
+    email: you@your-company.com
+  license:
+    name: Apache 2.0
+    url: 'http://www.apache.org/licenses/LICENSE-2.0.html'
+tags:
+  - name: environment
+    description: Everything about created nightfall environments
+  - name: deployment
+    description: Everything about deployed nightfall infrastructure
+paths:
+  /environment:
+    post:
+      tags: 
+      - environment
+      summary: creates new nightfall environment
+      operationId:  createEnvironment
+      description: |
+        By passing the environment name and the AWS region, you can create a new nightfall
+        environment.
+      requestBody:
+        description: Environment definition
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Environment'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '405':
+          description: Invalid input
+        '422':
+          description: Duplicated environment name
+        '423':
+          description: Busy server. Try again later
+    get:
+      tags: 
+      - environment
+      summary: list status of all environments
+      operationId:  listEnvironments
+      description: |
+        Get nightfall environments status. Requires a previous POST \refresh to collect data
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentStatusArray'
+  /environment/refresh:
+    post:
+      tags: 
+      - environment
+      summary: updates status of all environments
+      operationId:  refreshEnvironments
+      description: |
+        Checks all deployed environments and updates status
+      responses:
+        '200':
+          description: Successful operation
+        '423':
+          description: Busy server. Try again later
+  /environment/{envName}:
+    get:
+      tags:
+        - environment
+      summary: gets  a nightfall environment by environment name
+      operationId:  getEnvironment
+      description: |
+        Get nightfall environment status
+      parameters:
+        - name: envName
+          in: path
+          description: environment name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentStatus'
+        '404':
+          description: Environment not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EnvironmentName'
+        '405':
+          description: Invalid Environment name supplied
+    delete:
+      tags:
+        - environment
+      summary: deletes a nightfall environment by name
+      operationId:  deleteEnvironment
+      description: |
+        Delete nightfall environment
+      parameters:
+        - name: envName
+          in: path
+          description: environment name
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Environment not found
+        '405':
+          description: Invalid input
+        '423':
+          description: Busy server. Try again later
+
+  /deployment:
+    post:
+      tags: 
+        - deployment
+      summary: creates new nightfall deployment
+      operationId:  createDeployment
+      description: |
+        By passing the environment name you can create a new nightfall deployment
+      requestBody:
+        description: Environment definition
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentName'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '405':
+          description: Invalid input
+        '423':
+          description: Busy server. Try again later
+  /deployment/{envName}:
+    delete:
+      tags: 
+        - deployment
+      summary: deletes nightfall deploymeny
+      operationId:  deleteDeployment
+      description: |
+        By passing the environment you can destroy an existing nightfall deploymeny
+      requestBody:
+        description: Environment Name
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentName'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Environment not found
+        '405':
+          description: Invalid input
+        '423':
+          description: Busy server. Try again later
+  /deployment/contracts:
+    post:
+      tags: 
+        - deployment
+      summary: Deploy nightfall smart contracts on an existing environment
+      operationId:  createDeploymentContracts
+      description: |
+        By passing the environment name you can deploy a new set of nightfall contracts
+      requestBody:
+        description: Environment definition
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EnvironmentName'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '405':
+          description: Invalid input
+        '423':
+          description: Busy server. Try again later
+
+  /deployment/cluster:
+    post:
+      tags: 
+        - deployment
+      summary: creates additional nightfall infrastructure for a new entity
+      operationId:  createDeploymentCluster
+      description: |
+        By passing the environment and cluster name you can create a new nightfall cluster
+      requestBody:
+        description: Cluster definition
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterName'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '405':
+          description: Invalid input
+        '422':
+          description: Duplicated environment name
+        '423':
+          description: Busy server. Try again later
+    delete:
+      tags: 
+        - deployment
+      summary: deletes additional nightfall infrastructure for a new entity
+      operationId:  deleteDeploymentCluster
+      description: |
+        By passing the environment and cluster name you can delete an existing nightfall cluster
+      requestBody:
+        description: Cluster definition
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClusterName'
+        required: true
+      responses:
+        '200':
+          description: Successful operation
+        '404':
+          description: Environment not found
+        '405':
+          description: Invalid input
+        '423':
+          description: Busy server. Try again later
+
+components:
+  schemas:
+    Environment:
+      type: object
+      required:
+        - envName
+        - region
+      properties:
+        envName:
+          type: string
+          example: Scotland
+        region:
+          type: string
+          example: eu-central-1
+          enum:
+           - eu-central-1
+           - eu-west-1
+           - eu-west-2
+           - us-east-1
+           - us-east-2
+    EnvironmentName:
+      type: object
+      required:
+        - envName
+      properties:
+        envName:
+          type: string
+          example: Scotland
+    ClusterName:
+      type: object
+      required:
+        - envName
+        - clusterName 
+      properties:
+        envName:
+          type: string
+          example: Scotland
+        clusterName:
+          type: string
+          example: HSBC
+    EnvironmentStatus:
+      type: object
+      required:
+        - envName
+        - region
+        - action
+        - status
+        - clusters
+      properties:
+        envName:
+          type: string
+          example: Scotland
+        region:
+          type: string
+          example: eu-central-1
+          enum:
+           - eu-central-1
+           - eu-west-1
+           - eu-west-2
+           - us-east-1
+           - us-east-2
+        action:
+          type: string
+          example: create
+          enum:
+           - create
+           - delete
+           - refresh
+        status:
+          type: string
+          example: finished
+          enum:
+           - success
+           - pending
+           - failed
+        clusters:
+          type: array
+          items:
+            type: string
+          example: ['cluster1', 'cluster2']
+        logs:
+          type: string
+          example: ''
+        error:
+          type: string
+          example: ''
+        stderr:
+          type: string
+          example: ''
+        urls:
+          type: object
+    EnvironmentStatusArray:
+      type: array
+      items:
+          $ref: '#/components/schemas/EnvironmentStatus'

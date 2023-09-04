@@ -17,8 +17,7 @@ fi
 set -o allexport
 source ../env/init-env.env
 
-repoList=("geth" \
-   "nightfall-admin" \
+repoList=("nightfall-admin" \
    "nightfall-adversary" \
    "nightfall-dashboard" \
    "nightfall-challenger" \
@@ -35,10 +34,16 @@ repoList=("geth" \
    "nightfall-worker" \
    "nightfall-lazy_client")
 
+
 echo "Creating repos in ${REGION}..."
 for repo in ${repoList[@]}; do
-  echo "Creating repo ${repo}..."
-  aws ecr create-repository \
-    --region ${REGION} \
-    --repository-name ${repo} > /dev/null
+  repoExists=$(aws ecr describe-repositories \
+     --region ${REGION} \
+     | jq '.repositories[].repositoryUri' | grep ${repo})
+  if [ -z "${repoExists}" ]; then
+    echo "Creating repo ${repo}..."
+    aws ecr create-repository \
+      --region ${REGION} \
+      --repository-name ${repo} > /dev/null
+  fi
 done

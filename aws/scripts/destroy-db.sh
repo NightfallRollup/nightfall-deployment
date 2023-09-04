@@ -25,7 +25,7 @@ source ../env/init-env.env
 
 vpcId=$(aws ec2 describe-vpcs \
   --region $REGION \
-  | jq ".Vpcs[] | select(.CidrBlock==\"10.48.0.0/16\") | .VpcId" \
+  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | select(.Tags[].Value==\"${ENV_NAME}-NightfallVPC\" or .Tags[].Value==\"${ENV_NAME^}-NightfallVPC\") | .VpcId" \
   | tr -d '"')
 
 if [ -z "${vpcId}" ]; then
@@ -143,16 +143,7 @@ while true; do
 done
 echo ""
 
-docDbParamsGroupName=docdb-${ENV_NAME,,}1-params
-paramsGroup=$(aws docdb describe-db-cluster-parameter-groups \
- --region $REGION \
- | jq ".DBClusterParameterGroups[] | select(.DBClusterParameterGroupName==\"${docDbParamsGroupName}\")")
-if [ "${paramsGroup}" ]; then
-  echo "Deleting paramsGroup ${docDbParamsGroupName}..."
-  aws docdb delete-db-cluster-parameter-group \
-   --db-cluster-parameter-group-name ${docDbParamsGroupName} \
-   --region $REGION > /dev/null
-fi
+sleep 10
 
 # Delete security group docDb
 docDbSgName=${ENV_NAME}-docDb-sg
@@ -178,5 +169,17 @@ if [ "${subnetGroup}" ]; then
   aws rds  delete-db-subnet-group \
     --region $REGION \
     --db-subnet-group-name ${docDbSubnetGroupName} > /dev/null
+fi
+
+# delete params group
+docDbParamsGroupName=docdb-${ENV_NAME,,}1-params
+paramsGroup=$(aws docdb describe-db-cluster-parameter-groups \
+ --region $REGION \
+ | jq ".DBClusterParameterGroups[] | select(.DBClusterParameterGroupName==\"${docDbParamsGroupName}\")")
+if [ "${paramsGroup}" ]; then
+  echo "Deleting paramsGroup ${docDbParamsGroupName}..."
+  aws docdb delete-db-cluster-parameter-group \
+   --db-cluster-parameter-group-name ${docDbParamsGroupName} \
+   --region $REGION > /dev/null
 fi
 

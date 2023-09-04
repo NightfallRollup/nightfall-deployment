@@ -11,6 +11,7 @@ const { ApplicationStack } = require('../lib/application/application-stack');
 const { ScheduleStack } = require('../lib/application/schedule-stack');
 const { DashboardStack } = require('../lib/application/dashboard-stack');
 const { DeployerStack } = require('../lib/application/deployer-stack');
+const { PipelineStack } = require('../lib/application/pipeline-stack');
 const { WAFStack } = require('../lib/application/waf-stack');
 const options = require('../lib/application/options.js');
 
@@ -22,8 +23,16 @@ const region = process.env.CDK_DEFAULT_REGION;
 const env = { account, region };
 const { envAttr } = options;
 
+// Create Pipeline Stack
+if (process.env.PIPELINE_STACK === 'true') {
+  const pipelinerStack = new PipelineStack(app, `${envAttr.name}-Pipeline`, {
+    description: 'Pipeline stack',
+    env,
+    options,
+  });
+}
 // Create Deployer Stack
-if (process.env.DEPLOYER_EC2 === 'true') {
+else if (process.env.DEPLOYER_EC2 === 'true') {
   const deployerStack = new DeployerStack(app, `${envAttr.name}-Deployer`, {
     description: 'Deployer EC2 Stack',
     env,

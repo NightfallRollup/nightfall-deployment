@@ -6,6 +6,7 @@
 #  AWS_ACCESS_KEY_ID=<xxxx> AWS_SECRET_ACCESS_KEY=<xxxxxxxxxx> RELEASE=<xxxx> ./add-cluster.sh
 #
 set -e
+
 # Export env variables
 set -o allexport
 source ../env/aws.env
@@ -28,6 +29,16 @@ if [ -z "${CLUSTER}" ]; then
 fi
 
 _CLUSTER=${CLUSTER^^}
+
+_CLUSTERS="${_CLUSTER,,},"
+# Retrieve clusters 
+for tmp in $(cat ../env/${RELEASE}.env | grep "_CLIENT SECTION" | grep START | awk '{split($0,a," "); print a[3]}' | awk '{split($0,a,"_"); print a[1]}' | awk '{ print tolower($0)}'); do
+  if [ "${tmp^^}" == "${_CLUSTER}" ]; then
+    echo "Cluster ${tmp,,} already added. Exiting..."
+    exit 0
+  fi
+  _CLUSTERS="${_CLUSTERS}${tmp,,},"
+done
 
 ### Generate regulator mnemonic
 REGULATOR_KEYS=$(cd .. && RELEASE=${RELEASE} make mnemonic)
@@ -70,8 +81,7 @@ CLIENT_SECTION=$(sed -n '/.*START CLIENT SECTION/, /.*END CLIENT SECTION/p' ../e
   | sed "s/\${COMMITMENTS_DB}/${_CLUSTER,,}_\${COMMITMENTS_DB}/g" \
   | sed "s/circom/${_CLUSTER,,}-circom/g")
 
-export CLUSTER1_CLIENT_COMMITMENTS_DB=${COMMITMENTS_DB}
-# Delete previousle added patterns
+# Delete previously added patterns
 sed -i "/.*START ${_CLUSTER}_REGULATOR SECTION/, /.*END ${CLUSTER}_REGULATOR SECTION/d" ../env/${RELEASE}.env
 sed -i "/.*START ${_CLUSTER}_CLIENT SECTION/, /.*END ${CLUSTER}_CLIENT SECTION/d" ../env/${RELEASE}.env
 
@@ -80,3 +90,7 @@ echo "${REGULATOR_SECTION}" >> ../env/${RELEASE}.env
 
 # Write Client Section
 echo "${CLIENT_SECTION}" >> ../env/${RELEASE}.env
+
+N_CLUSTERS=$((N_CLUSTERS+1))
+perl -i -pe "s#export N_CLUSTERS=.*#export N_CLUSTERS=${N_CLUSTERS}#g" ../env/${RELEASE}.env
+perl -i -pe "s#export CURRENT_CLUSTERS=.*#export CURRENT_CLUSTERS=${_CLUSTERS}#g" ../env/${RELEASE}.env

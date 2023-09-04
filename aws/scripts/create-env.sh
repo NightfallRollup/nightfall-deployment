@@ -32,7 +32,8 @@ source ../env/init-env.env
 SECRET_FILE=../aws/paramstore/params.txt ./create-secrets.sh
 ./create-db.sh
 ./create-vpn.sh
-./create-apigw.sh
+#./create-apigw.sh
 ./create-envfile.sh
 ./create-bucket.sh
 ./create-reserve.sh
+./create-repos.sh

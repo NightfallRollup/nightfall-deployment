@@ -28,7 +28,7 @@ source ../env/init-env.env
 ./destroy-vpn.sh
 ./destroy-vpc.sh
 ./destroy-cdk-context.sh
-./destroy-apigw.sh
+#./destroy-apigw.sh
 ./destroy-bucket.sh
 SECRET_FILE=../aws/paramstore/params.txt ./destroy-secrets.sh
 ./destroy-reserve.sh

@@ -357,7 +357,7 @@ class ApplicationStack extends Stack {
   
         // ECR Repo
         const { containerInfo } = appAttr(_clusterName);
-        const { imageName, imageTag, imageNameIndex = '' } = containerInfo;
+        const { imageName, imageTag, imageNameIndex = '', repository } = containerInfo;
         let _imageName = imageName;
         if (imageNameIndex.includes(',')) {
           const imageIndex = Number(imageNameIndex.split(',')[instanceIndex]);
@@ -365,7 +365,7 @@ class ApplicationStack extends Stack {
         } else if (imageNameIndex !== '') {
           _imageName = imageName[Number(imageNameIndex)];
         }
-        const repository = Repository.fromRepositoryName(
+        const repo = Repository.fromRepositoryName(
           this,
           `${envAttr.name}-${name}${instanceLabel}Repo`,
           _imageName,
@@ -539,7 +539,9 @@ class ApplicationStack extends Stack {
         const container = taskDefinition[taskDefinition.length - 1].addContainer(
           `${envAttr.name}-${name}${instanceLabel}Container`,
           {
-            image: ecs.ContainerImage.fromEcrRepository(repository, imageTag),
+            image: repository === process.env.ECR_REPO ?
+              ecs.ContainerImage.fromEcrRepository(repo, imageTag) :
+              ecs.ContainerImage.fromRegistry(`${repository}/${imageName}:${imageTag}`),
             containerName: `${envAttr.name}-${name}${instanceLabel}Container`,
             logging: logDriver[logDriver.length - 1],
             environment: { ...updatedEnvVars, ...secretEnvVars },
@@ -580,7 +582,7 @@ class ApplicationStack extends Stack {
             taskDefinition: taskDefinition[taskDefinition.length - 1],
             // Public IP required so we can get the ECR or Docker image. If you have a NAT Gateway or ECR VPC Endpoints set this to false.
             assignPublicIp,
-            desiredCount,
+            desiredCount: 0,//desiredCount,
             // TODO: for some reason, all private subnets are selected.
             vpcSubnets: appSubnets,
             securityGroups: [appSg[appSg.length - 1]],

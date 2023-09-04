@@ -16,8 +16,7 @@ fi
 set -o allexport
 source ../env/init-env.env
 
-repoList=("geth" \
-   "nightfall-admin" \
+repoList=("nightfall-admin" \
    "nightfall-adversary" \
    "nightfall-dashboard" \
    "nightfall-challenger" \

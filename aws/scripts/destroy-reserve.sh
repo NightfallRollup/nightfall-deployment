@@ -17,7 +17,12 @@ if [ -z "${REGION}" ]; then
   exit 1
 fi
 
-echo "Deleting Reservation Param Reserved_Env in ${ENV_NAME}..."
-aws ssm delete-parameter \
-  --name /${ENV_NAME}/Reserved_Env \
-  --region ${REGION}  > /dev/null
+paramExists=$(aws ssm describe-parameters \
+  --region ${REGION} | grep /${ENV_NAME}/Reserved_Env
+)
+if [ "${paramExists}" ]; then
+  echo "Deleting Reservation Param Reserved_Env in ${ENV_NAME}..."
+  aws ssm delete-parameter \
+    --name /${ENV_NAME}/Reserved_Env \
+    --region ${REGION}  > /dev/null
+fi

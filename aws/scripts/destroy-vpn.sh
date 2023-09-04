@@ -24,7 +24,7 @@ source ../env/init-env.env
 
 vpcId=$(aws ec2 describe-vpcs \
   --region $REGION \
-  | jq ".Vpcs[] | select(.CidrBlock==\"10.48.0.0/16\") | .VpcId" \
+  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | select(.Tags[].Value==\"${ENV_NAME}-NightfallVPC\" or .Tags[].Value==\"${ENV_NAME^}-NightfallVPC\") | .VpcId" \
   | tr -d '"')
 
 if [ -z "${vpcId}" ]; then
@@ -42,6 +42,8 @@ certificateArns=$(aws acm list-certificates \
   | jq '.CertificateSummaryList[].CertificateArn' \
   | tr -d '"')
 
+sleep 10
+
 for certificateArn in $certificateArns; do
   status=$(aws acm list-tags-for-certificate \
      --certificate-arn $certificateArn \
@@ -57,18 +59,14 @@ done
 
 # delete vpn client endpoint
 echo -n "Waiting for VPN Endpoint to be available..."
-while true; do
-  vpnId=$(aws ec2 describe-client-vpn-endpoints \
-    --region $REGION \
-    | jq ".ClientVpnEndpoints[] | select(.VpcId==\"${vpcId}\") | .ClientVpnEndpointId" \
-    | tr -d '"')
-  if [ "${vpnId}" ]; then  
-    break
-  fi
-  echo -n "."
-  sleep 10
-done
-echo ""
+vpnId=$(aws ec2 describe-client-vpn-endpoints \
+  --region $REGION \
+  | jq ".ClientVpnEndpoints[] | select(.VpcId==\"${vpcId}\") | .ClientVpnEndpointId" \
+  | tr -d '"')
+if [ -z "${vpnId}" ]; then  
+  echo "vpn endpoint for vpc ${vpcId} doesn't exist. Exiting..."
+  exit 1
+fi
 
 assocId=$(aws ec2 describe-client-vpn-target-networks \
   --region $REGION \

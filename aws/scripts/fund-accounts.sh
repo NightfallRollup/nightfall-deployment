@@ -6,9 +6,10 @@
 #  AWS_ACCESS_KEY_ID=<xxxx> AWS_SECRET_ACCESS_KEY=<xxxxxxxxxx> RELEASE=<xxxx> COMMAND=<command>./fund-accounts.sh
 # 
 #  COMMAND can be fund to fund accounts, or empty to check balances
-set -e
 
 # Export env variables
+set -e
+
 set -o allexport
 source ../env/aws.env
 if [ ! -f "../env/${RELEASE}.env" ]; then
@@ -88,7 +89,9 @@ if [ "${COMMAND}" = "fund" ]; then
   fi
 fi
 
+if [ "$(docker ps | grep client)" ]; then
 CLIENT=$(docker inspect client | grep -m 1 \"IPAddress\" | awk '{print $2}' | tr -d '"|,')
+fi
 if [ "${CLIENT}" ]; then
   CLIENT_URL=http://${CLIENT} 
 else

@@ -23,7 +23,7 @@ source ../env/init-env.env
 
 vpcId=$(aws ec2 describe-vpcs \
   --region $REGION \
-  | jq ".Vpcs[] | select(.CidrBlock==\"10.48.0.0/16\") | .VpcId" \
+  | jq ".Vpcs[] | select(.CidrBlock==\"${vpcCidrBlock}\") | select(.Tags[].Value==\"${ENV_NAME}-NightfallVPC\" or .Tags[].Value==\"${ENV_NAME^}-NightfallVPC\") | .VpcId" \
   | tr -d '"')
 
 if [ -z "${vpcId}" ]; then
@@ -47,7 +47,7 @@ fi
 echo -n "Creating EFS..."
 efs_describe=$(aws efs create-file-system \
   --encrypted \
-  --creation-token FileSystemForWalkthrough1 \
+  --creation-token ${efsName} \
   --tags Key=Name,Value=${efsName} \
   --region ${REGION})
 efsId=$(echo $efs_describe | jq '.FileSystemId' | tr -d '"')

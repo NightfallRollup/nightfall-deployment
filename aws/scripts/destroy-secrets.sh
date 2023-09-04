@@ -9,10 +9,6 @@
 #   SECRET FILE is the file with the parameters to delete. If file is empty or it doesnt exist, all parameters
 #  in region will be deleted
 
-if [ ! -f "../env/${ENV_NAME,,}.env" ]; then
-   echo "Environment failed ../env/${ENV_NAME,,}.env doesnt exit. Exiting..."
-   exit 1
-fi
 # Export env variables
 set -o allexport
 SECRETS_ENV=../env/secrets-ganache.env
