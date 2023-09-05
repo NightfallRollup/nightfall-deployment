@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=c2913909754afb5442db3756fe90bd3968551cd8
+NIGHTFALL_BRANCH=1671148038500f8ad72f3f4800bb51e46bcddeb5
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -368,6 +368,7 @@ deploy-wallet-local:
 build-all:
 	$(eval NIGHTFALL_LEGACY=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export NIGHTFALL_LEGACY=//p'))
 	@make update-repo
+	@make build-deployer
 	if [ "${NIGHTFALL_LEGACY}" != "true" ]; then\
 	  make build-client_txw; \
 	  make build-client_auxw; \
@@ -380,7 +381,6 @@ build-all:
 	#@make build-lazy_client
 	@make build-optimist
 	@make build-worker
-	@make build-deployer
 	#@make build-publisher
 	@make build-challenger
 	@make build-dashboard
@@ -390,9 +390,10 @@ build-all:
 # Push images to docker repo (client, optimist, challenger, publisher, adversary)
 push-all:
 	@make login-ecr
-	$(eval GIT_COMMIT=$(shell git rev-parse HEAD))
 	$(eval NIGHTFALL_LEGACY=$(shell cat env/${RELEASE}.env | sed  -n -e 's/^export NIGHTFALL_LEGACY=//p'))
-	if [ "${NIGHTFALL_LEGACY}" != "true" ]; then\
+	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
+	@make push-image NIGHTFALL_IMAGE=nightfall-deployer GIT_COMMIT=${GIT_COMMIT}
+	@if [ "${NIGHTFALL_LEGACY}" != "true" ]; then\
 	  make push-image NIGHTFALL_IMAGE=nightfall-client_txw GIT_COMMIT=${GIT_COMMIT} ; \
 	  make push-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT} ; \
 	  make push-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT} ; \
@@ -400,17 +401,16 @@ push-all:
 	  make push-image NIGHTFALL_IMAGE=nightfall-opt_bpw GIT_COMMIT=${GIT_COMMIT} ; \
 	  make push-image NIGHTFALL_IMAGE=nightfall-opt_baw GIT_COMMIT=${GIT_COMMIT} ; \
 	fi
-	#@make push-image NIGHTFALL_IMAGE=nightfall-publisher GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
-	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make push-image NIGHTFALL_IMAGE=nightfall-client GIT_COMMIT=${GIT_COMMIT}
 	#@make push-image NIGHTFALL_IMAGE=nightfall-lazy_client GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-optimist GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-worker GIT_COMMIT=${GIT_COMMIT}
-	@make push-image NIGHTFALL_IMAGE=nightfall-deployer GIT_COMMIT=${GIT_COMMIT}
 	@make push-image NIGHTFALL_IMAGE=nightfall-challenger GIT_COMMIT=${GIT_COMMIT}
 	#@make push-image NIGHTFALL_IMAGE=nightfall-adversary GIT_COMMIT=${GIT_COMMIT}
 	#@make push-image NIGHTFALL_IMAGE=nightfall-admin GIT_COMMIT=${GIT_COMMIT}
+	$(eval GIT_COMMIT=$(shell git rev-parse HEAD))
+	#@make push-image NIGHTFALL_IMAGE=nightfall-publisher GIT_COMMIT=${GIT_COMMIT}
+	@make push-image NIGHTFALL_IMAGE=nightfall-dashboard GIT_COMMIT=${GIT_COMMIT}
 
 # Build individual images
 build-client:
@@ -429,6 +429,10 @@ build-client_auxw:
 	@make build-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
 
 build-client_bpw:
+	if [ "${OVERWRITE_CODE}" = "y" ]; then\
+	  cp tmp/default.js nightfall_3/config/default.js; \
+	  cp tmp/client/block-proposed.mjs nightfall_3/nightfall-client/block-proposed.mjs; \
+	fi
 	@cp docker/docker-client-bp-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-bp-worker-entrypoint.sh
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT}
@@ -985,7 +989,7 @@ build-service-image:
 # Check if docker images are available locally. If not, build them
 push-image:
 	$(eval DOCKER_IMAGES=$(shell docker images | grep ${ERC_REPO}/${NIGHTFALL_IMAGE} | grep ${GIT_COMMIT}))
-	@if [ -z "${DOCKER_IMAGES}" ]; then\
+	if [ -z "${DOCKER_IMAGES}" ]; then\
 	    $(eval BUILD_IMAGE=$(word 2, $(subst -, ,$(NIGHTFALL_IMAGE)))) \
 		make build-${BUILD_IMAGE};\
     fi

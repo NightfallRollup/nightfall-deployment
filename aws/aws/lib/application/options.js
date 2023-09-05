@@ -721,6 +721,7 @@ const clientAppAttr = clusterName => ({
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
       CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}CLIENT_AUX_WORKER_HOST`],
       CLIENT_BP_WORKER_URL:  `https://` + process.env[`${clusterName}CLIENT_BP_WORKER_HOST`],
+      TIMER_CHECK_EXPIRED_TRANSACTIONS: process.env.TIMER_CHECK_EXPIRED_TRANSACTIONS,
     },
     secretVars: [
       {
@@ -955,6 +956,7 @@ const clientBpWorkerAppAttr = clusterName => ({
       CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}CLIENT_AUX_WORKER_HOST`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+      CBDC_PUBLISHER_ENABLE: process.env.CBDC_PUBLISHER_ENABLE,
     },
     secretVars: [
       {

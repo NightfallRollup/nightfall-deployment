@@ -406,6 +406,8 @@ To deregister a proposer:
 RELEASE=xxx make deregister-proposer
 ```
 
+By default, proposer is registered atomatically when docker is started.
+
 14. Launch some transactions
 To launch initial transactions and propose the initial blocks
 ```
