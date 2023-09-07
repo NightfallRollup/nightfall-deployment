@@ -11,7 +11,7 @@ NIGHTFALL_REPO=NightfallRollup/nightfall_3.5
 ##VERSIONS
 # Specify git commit tag/branch. If unspecified, git commit will use current
 # NIGHTFALL_BRANCH=7d6b132845013246b40dd2b6f067246eb1e6f451
-NIGHTFALL_BRANCH=1671148038500f8ad72f3f4800bb51e46bcddeb5
+NIGHTFALL_BRANCH=989a17f8b8409616b80202551cbb56c704ff0120
 OVERWRITE_CODE=y
 
 ### RELEASES
@@ -429,10 +429,6 @@ build-client_auxw:
 	@make build-image NIGHTFALL_IMAGE=nightfall-client_auxw GIT_COMMIT=${GIT_COMMIT}
 
 build-client_bpw:
-	if [ "${OVERWRITE_CODE}" = "y" ]; then\
-	  cp tmp/default.js nightfall_3/config/default.js; \
-	  cp tmp/client/block-proposed.mjs nightfall_3/nightfall-client/block-proposed.mjs; \
-	fi
 	@cp docker/docker-client-bp-worker-entrypoint.sh nightfall_3/nightfall-client/docker-client-bp-worker-entrypoint.sh
 	$(eval GIT_COMMIT=$(shell cd nightfall_3 && git rev-parse HEAD))
 	@make build-image NIGHTFALL_IMAGE=nightfall-client_bpw GIT_COMMIT=${GIT_COMMIT}
@@ -608,7 +604,7 @@ push-geth:
 # Stop services
 stop-infra:
 	@if [ -z "${CLUSTER}" ]; then\
-	  make stop-optimis; \
+	  make stop-optimist; \
 	  make stop-opt_txw; \
 	  make stop-opt_bpw; \
 	  make stop-opt_baw; \
@@ -989,7 +985,7 @@ build-service-image:
 # Check if docker images are available locally. If not, build them
 push-image:
 	$(eval DOCKER_IMAGES=$(shell docker images | grep ${ERC_REPO}/${NIGHTFALL_IMAGE} | grep ${GIT_COMMIT}))
-	if [ -z "${DOCKER_IMAGES}" ]; then\
+	@if [ -z "${DOCKER_IMAGES}" ]; then\
 	    $(eval BUILD_IMAGE=$(word 2, $(subst -, ,$(NIGHTFALL_IMAGE)))) \
 		make build-${BUILD_IMAGE};\
     fi
