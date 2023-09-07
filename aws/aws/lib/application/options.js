@@ -956,7 +956,6 @@ const clientBpWorkerAppAttr = clusterName => ({
       CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}CLIENT_AUX_WORKER_HOST`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
-      CBDC_PUBLISHER_ENABLE: process.env.CBDC_PUBLISHER_ENABLE,
     },
     secretVars: [
       {
