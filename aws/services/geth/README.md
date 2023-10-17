@@ -7,7 +7,7 @@ To generate a Geth docker container, one first needs to generate some data that 
 ```
 cd volumes/dag1 && sudo rm -rf * && cd -
 cd volumes/geth1-chain && sudo rm -rf * && cd -
-cd volumes/geth-miner-chain1 && sudo rm -rf * && cd-
+cd volumes/geth-miner-chain1 && sudo rm -rf * && cd -
 ```
 
 2. Launch geth locally
