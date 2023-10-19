@@ -31,7 +31,7 @@ services:
       geth_network:
     entrypoint: /setup/entrypoint.sh
     command:
-      --http --http.addr 0.0.0.0 --http.port 8545 --http.vhosts * --http.corsdomain * --http.api eth,net,web3,admin,txpool,personal,debug --ws.port 8546 --ws --ws.origins * --ws.addr 0.0.0.0 --verbosity 3
+      --http --http.addr 0.0.0.0 --http.port 8545 --http.vhosts * --http.corsdomain * --http.api eth,net,web3,admin,txpool,personal --ws.port 8546 --ws --ws.origins * --ws.addr 0.0.0.0 --verbosity 3
 
 
   blockchain-miner1:
@@ -50,7 +50,7 @@ services:
       geth_network:
     entrypoint: /setup/entrypoint.sh
     command:
-      --http --http.addr 0.0.0.0 --http.port 8545 --http.vhosts * --http.corsdomain * --http.api eth,net,web3,admin,txpool,personal,debug --ws.port 8546 --ws --ws.origins * --ws.addr 0.0.0.0 --verbosity 3 --mine
+      --http --http.addr 0.0.0.0 --http.port 8545 --http.vhosts * --http.corsdomain * --http.api eth,net,web3,admin,txpool,personal --ws.port 8546 --ws --ws.origins * --ws.addr 0.0.0.0 --verbosity 3 --mine
 
 networks:
   geth_network:
