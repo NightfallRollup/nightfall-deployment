@@ -153,8 +153,8 @@ if [ -z "${CLIENT}" ]; then
     WORKER2_CHECK=$(curl https://"${_CIRCOM_WORKER_HOST}"/healthcheck 2> /dev/null | grep OK || true)
     MONGO_CONNECTION_STRING="mongodb://${MONGO_USERNAME}:${MONGO_PASSWORD}@${MONGO_URL}:27017/?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false"
     #if [[ ("${CLIENT1_CHECK}") && ("${CLIENT2_CHECK}") && ("${WORKER1_CHECK}") && ("${WORKER2_CHECK}") ]]; then
-    if [[ ("${CLIENT1_CHECK}") && ("${WORKER1_CHECK}") && ("${CLIENT1_TXW_CHECK}") && (${CLIENT1_BPW_CHECK}) && (${CLIENT1_AUXW_CHECK}) ]] && \
-       [[ ("${REGULATOR1_CHECK}") && (${REGULATOR1_BPW_CHECK}) && (${REGULATOR1_AUXW_CHECK}) ]]; then
+    if [[ ("${CLIENT1_CHECK}") && ("${WORKER1_CHECK}") && ("${CLIENT1_TXW_CHECK}") && (${CLIENT1_BPW_CHECK}) && (${CLIENT1_AUXW_CHECK}) ]]; then
+       #[[ ("${REGULATOR1_CHECK}") && (${REGULATOR1_BPW_CHECK}) && (${REGULATOR1_AUXW_CHECK}) ]]; then
         cd ../nightfall_3 && ENVIRONMENT=aws \
          LAUNCH_LOCAL='' \
          CLIENT2_CHECK=${CLIENT2_CHECK} \

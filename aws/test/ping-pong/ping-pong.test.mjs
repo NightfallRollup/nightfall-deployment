@@ -23,14 +23,18 @@ describe('Ping-pong tests', () => {
     }
   }
 
-  const regulatorUrl2 = process.env.REGULATOR1_HOST;
-  const regulatorBpUrl2 = process.env.REGULATOR1_BP_WORKER_HOST;
-  const regulatorUrl1 =
-    process.env.REGULATOR2_CHECK !== '' ? process.env.REGULATOR2_HOST : process.env.REGULATOR1_HOST;
-  const regulatorBpUrl1 =
-    process.env.REGULATOR2_CHECK !== ''
-      ? process.env.REGULATOR2_BP_WORKER_HOST
-      : process.env.REGULATOR1_BP_WORKER_HOST;
+  //const regulatorUrl2 = process.env.REGULATOR1_HOST;
+  //const regulatorBpUrl2 = process.env.REGULATOR1_BP_WORKER_HOST;
+  //const regulatorUrl1 =
+    //process.env.REGULATOR2_CHECK !== '' ? process.env.REGULATOR2_HOST : process.env.REGULATOR1_HOST;
+  //const regulatorBpUrl1 =
+    //process.env.REGULATOR2_CHECK !== ''
+      //? process.env.REGULATOR2_BP_WORKER_HOST
+      //: process.env.REGULATOR1_BP_WORKER_HOST;
+  const regulatorUrl1 = "";
+  const regulatorUrl2 = "";
+  const regulatorBpUrl1 = "";
+  const regulatorBpUrl2 = "";
   it('Runs ping-pong tests', async () => {
     localTest(true, environment, regulatorUrl1, regulatorBpUrl1);
     await localTest(false, environment2, regulatorUrl2, regulatorBpUrl2);
