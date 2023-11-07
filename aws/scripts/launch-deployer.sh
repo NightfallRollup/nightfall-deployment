@@ -155,7 +155,7 @@ if [ -z "${UPGRADE}" ]; then
     fi
   fi
   
-  ./create-dynamodb.sh
+  #./create-dynamodb.sh
 else
   echo "Upgrading contracts..."
 fi
