@@ -158,10 +158,12 @@ done
 echo -n "OK"
 
 echo ""
+# instance types db.r6g.large, db.r6g.xlarge, db.r6g.2xlarge, db.r6g.4xlarge, db.r6g.8xlarge, db.r6g.12xlarge, db.r6g.16xlarge, db.r6g.24xlarge
+# instace types db.t4g.small, db.t4g.medium, db.t4g.large
 echo -n "Creating docDb Instance ${docDbId}..."
 aws docdb create-db-instance \
  --db-instance-identifier ${docDbId} \
- --db-instance-class db.r6g.large \
+ --db-instance-class db.t4g.medium \
  --region $REGION \
  --db-cluster-identifier docdb-${ENV_NAME,,}1 \
  --engine docdb > /dev/null
