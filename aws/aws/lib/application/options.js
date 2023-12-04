@@ -111,6 +111,7 @@ const challengerAppAttr = clusterName => ({
       FULL_VERIFICATION_SELF_PROPOSED_BLOCKS: process.env.OPTIMIST_FULL_VERIFICATION_SELF_PROPOSED_BLOCKS,
       OPTIMIST_BP_WORKER_WS_HOST: process.env.OPTIMIST_BP_WORKER_WS_HOST,
       GAS_ESTIMATE_ENDPOINT: process.env.GAS_ESTIMATE_ENDPOINT,
+      CHALLENGER_CPU_COUNT: process.env.CHALLENGER_CPU_COUNT,
     },
     secretVars: [
       {
@@ -135,7 +136,7 @@ const challengerAppAttr = clusterName => ({
     imageName: 'nightfall-challenger',
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env.CHALLENGER_CPU_COUNT ? Number(process.env.CHALLENGER_CPU_COUNT ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {
     downtime: {
@@ -202,6 +203,7 @@ const optimistAppAttr = clusterName => ({
       OPTIMIST_TX_WORKER_URL: `https://${process.env.OPTIMIST_TX_WORKER_HOST}`,
       OPTIMIST_BA_WORKER_URL: `https://${process.env.OPTIMIST_BA_WORKER_HOST}`,
       OPTIMIST_BP_WORKER_URL: `https://${process.env.OPTIMIST_BP_WORKER_HOST}`,
+      OPTIMIST_CPU_COUNT: process.env.OPTIMIST_CPU_COUNT,
     },
     secretVars: [
       {
@@ -237,7 +239,7 @@ const optimistAppAttr = clusterName => ({
     imageName: ['nightfall-optimist', 'nightfall-adversary'],
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env.OPTIMIST_CPU_COUNT ? Number(process.env.OPTIMIST_CPU_COUNT ) : 1,
   schedule: {},
   efsVolumes: [
     {
@@ -364,6 +366,7 @@ const optBpWorkerAppAttr = clusterName => ({
       IS_CHALLENGER: process.env.OPTIMIST_IS_CHALLENGER,
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+      OPTIMIST_BA_WORKER_CPU_COUNT: process.env.OPTIMIST_BA_WORKER_CPU_COUNT,
     },
     secretVars: [
       {
@@ -383,7 +386,7 @@ const optBpWorkerAppAttr = clusterName => ({
     imageTag: process.env.RELEASE,
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  cpu: 1,
+  cpu: process.env.OPTIMIST_BA_WORKER_CPU_COUNT ? Number(process.env.OPTIMIST_BA_WORKER_CPU_COUNT ) : 1,
   //memoryLimitMiB: 8192,
   //cpu: 4096,
   desiredCount: 1,
@@ -433,6 +436,7 @@ const optBaWorkerAppAttr = clusterName => ({
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       PROPOSER_MAX_BLOCK_PERIOD_MILIS: process.env.PROPOSER_MAX_BLOCK_PERIOD_MILIS,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+      OPTIMIST_BP_WORKER_CPU_COUNT: process.env.OPTIMIST_BP_WORKER_CPU_COUNT,
     },
     secretVars: [
       {
@@ -452,7 +456,7 @@ const optBaWorkerAppAttr = clusterName => ({
     imageTag: process.env.RELEASE,
   },
   // https://docs.aws.amazon.com/AmazonECS/latest/developerguide/task_definition_parameters.html
-  cpu: 1,
+  cpu: process.env.OPTIMIST_BP_WORKER_CPU_COUNT ? Number(process.env.OPTIMIST_BP_WORKER_CPU_COUNT ) : 1,
   desiredCount: 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
@@ -501,6 +505,7 @@ const publisherAppAttr = clusterName => ({
       DOMAIN_NAME: process.env.DOMAIN_NAME,
       ENVIRONMENT: 'aws',
       BLOCKCHAIN_PATH: process.env.BLOCKCHAIN_PATH,
+      PUBLISHER_CPU_COUNT: process.env.PUBLISHER_CPU_COUNT,
     },
     secretVars: [
       {
@@ -519,7 +524,7 @@ const publisherAppAttr = clusterName => ({
     imageName: 'nightfall-publisher',
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env.PUBLISHER_CPU_COUNT ? Number(process.env.PUBLISHER_CPU_COUNT ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
 });
@@ -599,6 +604,7 @@ const dashboardAppAttr = clusterName => ({
       ENVIRONMENT: 'aws',
       S3_BUCKET_CLOUDFRONT: process.env.S3_BUCKET_CLOUDFRONT,
       DASHBOARD_CLUSTERS: process.env.DASHBOARD_CLUSTERS,
+      DASHBOARD_CPU_COUNT: process.env.DASHBOARD_CPU_COUNT,
     },
     secretVars: [
       {
@@ -622,7 +628,7 @@ const dashboardAppAttr = clusterName => ({
     imageName: 'nightfall-dashboard',
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env.DASHBOARD_CPU_COUNT ? Number(process.env.DASHBOARD_CPU_COUNT ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
 });
@@ -722,6 +728,7 @@ const clientAppAttr = clusterName => ({
       CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}CLIENT_AUX_WORKER_HOST`],
       CLIENT_BP_WORKER_URL:  `https://` + process.env[`${clusterName}CLIENT_BP_WORKER_HOST`],
       TIMER_CHECK_EXPIRED_TRANSACTIONS: process.env.TIMER_CHECK_EXPIRED_TRANSACTIONS,
+      CLIENT_CPU_COUNT: process.env[`${clusterName}CLIENT_CPU_COUNT`],
     },
     secretVars: [
       {
@@ -741,7 +748,7 @@ const clientAppAttr = clusterName => ({
     imageName: ['nightfall-client', 'nightfall-lazy_client'],
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env[`${clusterName}CLIENT_CPU_COUNT`] ? Number(process.env[`${clusterName}CLIENT_CPU_COUNT`]) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -956,6 +963,7 @@ const clientBpWorkerAppAttr = clusterName => ({
       CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}CLIENT_AUX_WORKER_HOST`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+      CLIENT_BP_WORKER_CPU_COUNT: process.env[`${clusterName}CLIENT_BP_WORKER_CPU_COUNT`],
     },
     secretVars: [
       {
@@ -974,7 +982,7 @@ const clientBpWorkerAppAttr = clusterName => ({
     imageName: 'nightfall-client_bpw',
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env[`${clusterName}CLIENT_BP_WORKER_CPU_COUNT`] ? Number(process.env[`${clusterName}CLIENT_BP_WORKER_CPU_COUNT`] ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -1032,6 +1040,7 @@ const regulatorAppAttr = clusterName => ({
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
       CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}REGULATOR_AUX_WORKER_HOST`],
       CLIENT_BP_WORKER_URL:  `https://` + process.env[`${clusterName}REGULATOR_BP_WORKER_HOST`],
+      REGULATOR_CPU_COUNT: process.env[`${clusterName}REGULATOR_CPU_COUNT`],
     },
     secretVars: [
       {
@@ -1055,7 +1064,7 @@ const regulatorAppAttr = clusterName => ({
     imageName: 'nightfall-client',
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env[`${clusterName}REGULATOR_CPU_COUNT`] ? Number(process.env[`${clusterName}REGULATOR_CPU_COUNT`] ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
@@ -1196,6 +1205,7 @@ const regulatorBpWorkerAppAttr = clusterName => ({
       CLIENT_AUX_WORKER_URL: `https://` + process.env[`${clusterName}REGULATOR_AUX_WORKER_HOST`],
       PERFORMANCE_BENCHMARK_ENABLE: process.env.PERFORMANCE_BENCHMARK_ENABLE,
       CONFIRMATIONS: process.env.BLOCKCHAIN_CONFIRMATIONS,
+      REGULATOR_CPU_COUNT: process.env[`${clusterName}REGULATOR_BP_WORKER_CPU_COUNT`],
     },
     secretVars: [
       {
@@ -1219,7 +1229,7 @@ const regulatorBpWorkerAppAttr = clusterName => ({
     imageName: 'nightfall-client_bpw',
     imageTag: process.env.RELEASE,
   },
-  cpu: 1,
+  cpu: process.env[`${clusterName}REGULATOR_BP_WORKER_CPU_COUNT`] ? Number(process.env[`${clusterName}REGULATOR_BP_WORKER_CPU_COUNT`] ) : 1,
   // Optional: set a schedule to start/stop the Task. CRON expressions without seconds. Time in UTC.
   schedule: {},
   efsVolumes: [
